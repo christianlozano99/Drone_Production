@@ -15,4 +15,4 @@ def overrideControls():
     return render_template("controlOverride.html")
 
 if __name__ == "__main__":
-    app.run(host='10.32.195.100',debug = True,threaded=True)
+    app.run(debug = True,threaded=True)
