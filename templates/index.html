@@ -35,20 +35,70 @@
      <style>
         *{margin: 0;}
         #map {
-                height: 445px;
-                width:auto;
+              float: left;
+              display: none;
+              height: 500px;
+              width:600px;
             }
         #coordinateInputList
         {
-          height: 400px;
-          width: 400px;
+          float: left;
+          display: none;
+          height: 500px;
+          width: 600px;
         }
+        #DroneStats
+        {
+          float: left;
+          display: none;
+          height: auto;
+          width: 600px;
+        }
+
+        #DroneOverride
+        {
+          float: left;
+          display: none;
+          height: auto;
+          width: auto;
+        }
+
+        #Land
+        {
+          float: left;
+        }
+
+        #landLng
+        {
+          float: left;
+          width: 140px;
+        }
+
+        #landLat
+        {
+          float: left;
+          width: 140px;
+        }
+        
     </style>   
 
+    <div class="control-group">
+        <label class="control-label">Select Drone:</label>
+        <div class="controls">
+            <select id="drone" >
+                <option value="opt1">Select Drone</option>
+                <option value="1">Drone 1</option>
+                <option value="2">Drone 2</option>
+                <option value="3">Drone 3</option>
+            </select>
+        </div>
+        <button onclick = 'dronePullup();' type="button" class="btn btn-primary">Submit</button>
+    </div>
 
     <div id = "map"></div>
 
     <form id = 'coordinateInputList'>
+      <h1>Search Area Input</h1>
       <div class="col">
         <label >Coordinate 1: </label>
         <input class="form-control" id="coor1Lng" aria-describedby="emailHelp" placeholder="Enter longitude">
@@ -74,6 +124,41 @@
         <button type = 'clear' class="btn btn-primary">Clear</button>
       </div>
 
+    </form>
+
+    <form id = 'DroneStats'>
+      <h1>Drone Information</h1>
+      <div class="col">
+        <label id = 'DroneID'>Drone ID: </label>
+      </div>
+      <div class="col">
+        <label id = "CurrentLocation">Current Location: </label>
+      </div>
+      <div class="col">
+        <label id = "BatteryLife">Battery life: </label>
+      </div>
+      <div class="col">
+        <label id = 'Status'>Status: </label>
+      </div>
+
+    </form>
+
+    <form id = 'DroneOverride'>
+      <h1>Drone Ovverride</h1>
+      <div class="col">
+        <button id = 'Emergency' type = 'button' onclick = "" class="btn btn-primary">Emergency Land</button>
+      </div>
+      <br>
+      <div class="col">
+        <button id = 'Retreat' type = 'button' onclick = "" class="btn btn-primary">Retreat</button>
+      </div>
+      <br>
+
+      <div class="col">
+        <button id= 'Land' type = 'button' onclick = "" class="btn btn-primary">Land at Location: </button>
+        <input class="form-control" id="landLng" aria-describedby="emailHelp" placeholder="Enter longitude">
+        <input class="form-control" id="landLat" aria-describedby="emailHelp" placeholder="Enter latitude">
+      </div>
     </form>
 
     <script>
@@ -116,6 +201,40 @@
           var marer4 = new google.maps.Marker({position:location4, map:map});
 
 
+        }
+
+        function dronePullup()
+        {
+          var dronePicked = document.getElementById("drone");
+
+          document.getElementById('map').style.display = "inline-block";
+          document.getElementById('coordinateInputList').style.display = "inline-block";
+          document.getElementById('DroneStats').style.display = "inline-block";
+          document.getElementById('DroneOverride').style.display = "inline-block";
+
+          fetechDroneStats(dronePicked.value);
+        }
+
+        function fetechDroneStats(dronenum)
+        {
+          var location = {lat: 28.6024, lng: -81.2001};
+          var map = new google.maps.Map(document.getElementById('map'),
+          {zoom: 15,center: location}); 
+          var marker = new google.maps.Marker({position:location, map:map});
+
+          var ID = document.getElementById('DroneID');
+          ID.textContent ='Drone ID: '+ dronenum;
+
+          var Location = document.getElementById('CurrentLocation');
+          Location.textContent = 'Current Location: Latitude ' + location.lat+ ' ,Longitude'+ location.lng;
+
+          var Battery = document.getElementById('BatteryLife');
+          Battery.textContent = "Battery Life: 50%";
+
+
+          var status = document.getElementById('Status');
+          status.textContent = "Status: Not Active";
+          
         }
 
     </script>
