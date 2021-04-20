@@ -39,9 +39,21 @@
         var nemaSentance = document.getElementById('NEMAin'); 
         //we need to decode $GNGGA,181722.00,4000.1256100,N,08301.5461206,W,1,12,99.99,221.231,M,-33.698,,*4A
         var NEMAArray = nemaSentance.value.split(',');
+        NEMAArray[2] = parseFloat(NEMAArray[2]/100);
+
+        var LatNum = Math.floor(NEMAArray[2]);
+        var LatDec = (NEMAArray[2] - LatNum)*100/60;
+        LatNum = LatNum + LatDec;
+
+
+        NEMAArray[4] = parseFloat(NEMAArray[4]/100);
+        var LngNum = Math.floor(NEMAArray[4]);
+        var LngDec = (NEMAArray[4]-LngNum)*100/60;
+        LngNum = LngNum + LngDec;
+
         document.getElementById("NEMA").innerText += nemaSentance.value;
-        document.getElementById("decodedNEMAAlt").innerText += NEMAArray[2];
-        document.getElementById("decodedNEMALng").innerText += NEMAArray[4];
+        document.getElementById("decodedNEMAAlt").innerText += LatNum;
+        document.getElementById("decodedNEMALng").innerText += LngNum;
 
     }
 </script>
@@ -51,7 +63,7 @@
     <button onclick = 'decodeNEMA()' type="button" class="btn btn-primary">Decode</button>
     <br>
     <label id = "NEMA"></label>
-    <br>
+    </br>
     <label id = "decodedNEMAAlt">Latitude: </label>
     </br>
     <label id = "decodedNEMALng">Longitude: </label>
