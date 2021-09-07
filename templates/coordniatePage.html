@@ -1,6 +1,73 @@
-{% extends "base.html" %}
-{%block title%}Coordniate Setting{%endblock%}
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <title>{% block title %}{% endblock %}</title>
+    </head>
 
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="/"><img src="/static/logo.jpg" width="30" height="30" class="d-inline-block align-top" alt="">Search and Rescue Drone</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+              <ul class="navbar-nav">
+                <li class="nav-item">
+                  <a class="nav-link" href="/">Coordinate Input <span class="sr-only"></span></a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="/coordinateInput">Drone Checking</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="/controlOverride">Control Override</a>
+                </li>
+               
+              </ul>
+            </div>
+          </nav>
+
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    </body>
 {%block content %}
-<h1> This will be the page to input Coordniates to Traverse </h1>
+<h1> Decode NMEA Sentance </h1>
+<script>
+    function decodeNEMA()
+    {
+        var nemaSentance = document.getElementById('NEMAin'); 
+        //we need to decode $GNGGA,181722.00,4000.1256100,N,08301.5461206,W,1,12,99.99,221.231,M,-33.698,,*4A
+        var NEMAArray = nemaSentance.value.split(',');
+        NEMAArray[2] = parseFloat(NEMAArray[2]/100);
+
+        var LatNum = Math.floor(NEMAArray[2]);
+        var LatDec = (NEMAArray[2] - LatNum)*100/60;
+        LatNum = LatNum + LatDec;
+
+
+        NEMAArray[4] = parseFloat(NEMAArray[4]/100);
+        var LngNum = Math.floor(NEMAArray[4]);
+        var LngDec = (NEMAArray[4]-LngNum)*100/60;
+        LngNum = LngNum + LngDec;
+
+        document.getElementById("NEMA").innerText += nemaSentance.value;
+        document.getElementById("decodedNEMAAlt").innerText += LatNum;
+        document.getElementById("decodedNEMALng").innerText += LngNum;
+
+    }
+</script>
+<form>
+    <label>Put in NEMA Sentance</label>
+    <input id = "NEMAin"></input>
+    <button onclick = 'decodeNEMA()' type="button" class="btn btn-primary">Decode</button>
+    <br>
+    <label id = "NEMA"></label>
+    </br>
+    <label id = "decodedNEMAAlt">Latitude: </label>
+    </br>
+    <label id = "decodedNEMALng">Longitude: </label>
+
+    
+</form>
 {%endblock%}
