@@ -5,7 +5,7 @@
         <title>{% block title %}{% endblock %}</title>
     </head>
 
-    <body>
+    <body onload="dronePullup()">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <a class="navbar-brand" href="/"><img src="/static/logo.jpg" width="30" height="30" class="d-inline-block align-top" alt="">Search and Rescue Drone</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -17,12 +17,8 @@
                   <a class="nav-link" href="/">Coordinate Input <span class="sr-only"></span></a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="/coordinateInput">Drone Checking</a>
+                  <a class="nav-link" href="/NMEAdecoder">NMEA decoder</a>
                 </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/controlOverride">Control Override</a>
-                </li>
-               
               </ul>
             </div>
           </nav>
@@ -82,21 +78,26 @@
         
     </style>   
 
-    <div class="control-group">
-        <label class="control-label">Select Drone:</label>
-        <div class="controls">
-            <select id="drone" >
-                <option value="opt1">Select Drone</option>
-                <option value="1">Drone 1</option>
-                <option value="2">Drone 2</option>
-                <option value="3">Drone 3</option>
-            </select>
-        </div>
-        <button onclick = 'dronePullup();' type="button" class="btn btn-primary">Submit</button>
-    </div>
+<!-- This form is the intial Drop down to pick the port -->
+    <form method="post" action="/">
+      <div class="control-group">
+          <label class="control-label">Select COM Port:</label>
+          <div class="controls">
+              <select id="drone" name = "PortNumber" >
+                  <option value="opt1">Select Port</option>
+                  <option value="1">COM1</option>
+                  <option value="2">COM2</option>
+                  <option value="3">COM3</option>
+              </select>
+          </div>
+            <button onclick = 'dronePullup();' type="submit" class="btn btn-primary" name = "action1">Submit</button>
+      </div>
+    </form>
 
+    <!-- Pulls up google maps API-->
     <div id = "map"></div>
 
+    <!-- form to input 4 coordinates-->
     <form id = 'coordinateInputList'>
       <h1>Search Area Input</h1>
       <div class="col">
@@ -123,9 +124,9 @@
         <button type = 'button' onclick = "initMAP()" class="btn btn-primary">Submit</button>
         <button type = 'clear' class="btn btn-primary">Clear</button>
       </div>
-
     </form>
 
+    <!--Once I am able to get Drone communication it's stats will go here-->
     <form id = 'DroneStats'>
       <h1>Drone Information</h1>
       <div class="col">
@@ -140,9 +141,9 @@
       <div class="col">
         <label id = 'Status'>Status: </label>
       </div>
-
     </form>
 
+    <!-- Extra Sections for emergency landing, coming back, etc.-->
     <form id = 'DroneOverride'>
       <h1>Drone Override</h1>
       <div class="col">
@@ -162,14 +163,7 @@
     </form>
 
     <script>
-        function updateCoordinates()
-        {
-          var map = new google.maps.Map(document.getElementById('map'),
-          {zoom: 4});
-          var location1 = {lat: parseFloat(document.getElementById('coor1Lat').value), lng: parseFloat(document.getElementById('coor1Lng').value)};
-          var marker = new google.maps.Marker({position:location1, map:map});
-        }
-
+        // Initialized map UI
         function initMAP()
         {
 
@@ -203,18 +197,23 @@
 
         }
 
+        // pulls up drone GUI after selecting port
         function dronePullup()
         {
-          var dronePicked = document.getElementById("drone");
+          if("{{ flash_message }}" == "True")
+          {
+            var dronePicked = "{{ SelectedPort }}";
 
-          document.getElementById('map').style.display = "inline-block";
-          document.getElementById('coordinateInputList').style.display = "inline-block";
-          document.getElementById('DroneStats').style.display = "inline-block";
-          document.getElementById('DroneOverride').style.display = "inline-block";
+            document.getElementById('map').style.display = "inline-block";
+            document.getElementById('coordinateInputList').style.display = "inline-block";
+            document.getElementById('DroneStats').style.display = "inline-block";
+            document.getElementById('DroneOverride').style.display = "inline-block";
 
-          fetechDroneStats(dronePicked.value);
+            fetechDroneStats(dronePicked);
+          }
         }
 
+        // gets hard codeded numbers for now when connection happens it'll use get for drone stats
         function fetechDroneStats(dronenum)
         {
           var location = {lat: 28.6024, lng: -81.2001};
