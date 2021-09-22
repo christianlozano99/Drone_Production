@@ -47,6 +47,7 @@ def home():
             print("PORT 1 SELECTED")
             SelectedPort = 1
             vehicle = connect('127.0.0.1:14551', wait_ready = True)
+            print('whatever\n')
             arm_n_takeoff(20 , vehicle)
 
         elif request.form.get('PortNumber') == '2':
