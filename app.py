@@ -1,6 +1,7 @@
 from flask import Flask, redirect, url_for, render_template, request
 from dronekit import connect, VehicleMode
 from time import sleep
+from colorama import Fore
 
 
 app = Flask(__name__)
@@ -37,33 +38,29 @@ def arm_n_takeoff(altitude, vehicleIn):
         sleep(1)
     print("\nReached target height!")
 
+    print(vehicle.location.global_relative_frame)
+
 # main page where mostly everything will happen
 @app.route("/", methods = ['POST', 'GET'])
 def home():
     SelectedPort = 0
 
     if request.method == 'POST':
-        if request.form.get('PortNumber') == '1':
-            print("PORT 1 SELECTED")
+        if request.form.get('PortNumber') != '':
             SelectedPort = 1
-            vehicle = connect('127.0.0.1:14551', wait_ready = True)
-            print('whatever\n')
+            connectionString = "127.0.0.1:" + request.form.get('PortNumber')
+            print(Fore.GREEN + "Port: "+ connectionString + " selected")
+            print(Fore.WHITE)
+            vehicle = connect(connectionString, wait_ready = True)
             arm_n_takeoff(20 , vehicle)
-
-        elif request.form.get('PortNumber') == '2':
-            print("PORT 2 SELECTED")
-            SelectedPort = 2
-
-        elif request.form.get('PortNumber') == '3':
-            print("PORT 3 SELECTED")
-            SelectedPort = 3 
 
         else:
             print("INVALID!")
             return render_template("index.html", flash_message = False, SelectedPort = SelectedPort)
 
 
-        return render_template("index.html", flash_message = True, SelectedPort = SelectedPort)
+        return render_template("index.html", flash_message = True, SelectedPort = SelectedPort, Battery = vehicle.battery.level\
+            , Port = request.form.get("PortNumber"), location = vehicle.location.global_relative_frame)
 
     return render_template("index.html", flash_message = False, SelectedPort = 0)
 

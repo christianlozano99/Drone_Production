@@ -81,14 +81,9 @@
 <!-- This form is the intial Drop down to pick the port -->
     <form method="post" action="/">
       <div class="control-group">
-          <label class="control-label">Select COM Port:</label>
+          <label class="control-label">Enter Port Number:</label>
           <div class="controls">
-              <select id="drone" name = "PortNumber" >
-                  <option value="opt1">Select Port</option>
-                  <option value="1">COM1</option>
-                  <option value="2">COM2</option>
-                  <option value="3">COM3</option>
-              </select>
+              <input type="text" name = "PortNumber">
           </div>
             <button onclick = 'dronePullup();' type="submit" class="btn btn-primary" name = "action1">Submit</button>
       </div>
@@ -137,9 +132,6 @@
       </div>
       <div class="col">
         <label id = "BatteryLife">Battery life: </label>
-      </div>
-      <div class="col">
-        <label id = 'Status'>Status: </label>
       </div>
     </form>
 
@@ -222,13 +214,14 @@
           var marker = new google.maps.Marker({position:location, map:map});
 
           var ID = document.getElementById('DroneID');
-          ID.textContent ='Drone ID: '+ dronenum;
+          ID.textContent ='Drone Port: '+ "{{Port}}";
 
+        
           var Location = document.getElementById('CurrentLocation');
-          Location.textContent = 'Current Location: Latitude ' + location.lat+ ' ,Longitude'+ location.lng;
+          Location.textContent = 'Current Location:' +"{{location}}".split("LocationGlobalRelative:").pop() ;
 
           var Battery = document.getElementById('BatteryLife');
-          Battery.textContent = "Battery Life: 50%";
+          Battery.textContent = "Battery Life: " + "{{ Battery }}"+ "%";
 
 
           var status = document.getElementById('Status');
