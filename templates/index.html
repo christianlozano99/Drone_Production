@@ -93,11 +93,11 @@
     <div id = "map"></div>
 
     <!-- form to input 4 coordinates-->
-    <form id = 'coordinateInputList'>
+    <form id = 'coordinateInputList' name = "test2">
       <h1>Search Area Input</h1>
       <div class="col">
         <label >Coordinate 1: </label>
-        <input class="form-control" id="coor1Lat" aria-describedby="emailHelp" placeholder="Enter latitude">
+        <input class="form-control" id="coor1Lat" aria-describedby="emailHelp" placeholder="Enter latitude" name = "test">
         <input class="form-control" id="coor1Lng" aria-describedby="emailHelp" placeholder="Enter longitude">
       </div>
       <div class="col">
@@ -116,12 +116,49 @@
         <input class="form-control" id="coor4Lng" aria-describedby="emailHelp" placeholder="Enter longitude">
       </div>
       <div class="col">
-        <button type = 'button' onclick = "initMAP()" class="btn btn-primary">Submit</button>
+        <a href=# id=startMission><button type = 'button' onclick = "initMAP()" class="btn btn-primary">Submit</button></a>
         <button type = 'clear' class="btn btn-primary">Clear</button>
       </div>
     </form>
 
-    <!--Once I am able to get Drone communication it's stats will go here-->
+    <!-- This script makes page not refresh on submit click-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type=text/javascript>
+            $(function() {
+              $('a#startMission').bind('click', function() {
+                /*$.getJSON('/background_process_test',
+                  {"a": $('input[name="test"]').val()},
+                  function(data) {
+                  //do nothing
+                });
+            return false;*/
+            var coor1Lat = document.getElementById('coor1Lat').value;
+            var coor1Lng = document.getElementById('coor1Lng').value;
+            var coor2Lat = document.getElementById('coor2Lat').value;
+            var coor2Lng = document.getElementById('coor2Lng').value;
+            var coor3Lat = document.getElementById('coor3Lat').value;
+            var coor3Lng = document.getElementById('coor3Lng').value;
+            var coor4Lat = document.getElementById('coor4Lat').value;
+            var coor4Lng = document.getElementById('coor4Lng').value;
+
+            
+            $.ajax({
+                type: "GET", 
+                url: "http://127.0.0.1:5000/background_process_test", //localhost Flask
+                data : {'coor1LAT' : coor1Lat,
+                        'coor1LNG' : coor1Lng,
+                        'coor2LAT' : coor2Lat,
+                        'coor2LNG' : coor2Lng,
+                        'coor3LAT' : coor3Lat,
+                        'coor3LNG' : coor3Lng,
+                        'coor4LAT' : coor4Lat,
+                        'coor4LNG' : coor4Lng},
+                contentType: "application/json",
+            });
+          });
+        });
+    </script>
+
     <form id = 'DroneStats'>
       <h1>Drone Information</h1>
       <div class="col">
