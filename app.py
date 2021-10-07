@@ -3,9 +3,9 @@ from dronekit import connect, VehicleMode
 from time import sleep
 from colorama import Fore
 
-
 app = Flask(__name__)
 
+vehicle = None 
 #testing moises test.py with app
 def arm_n_takeoff(altitude, vehicleIn):
     vehicle = vehicleIn
@@ -28,6 +28,16 @@ def arm_n_takeoff(altitude, vehicleIn):
         sleep(1)
     print("\nDrone is armed!")
 
+        # Takeoff!
+    vehicle.simple_takeoff(altitude)
+    print("Taking off.")
+
+    # Wait until 95% of altitude is reached
+    while vehicle.location.global_relative_frame.alt < (altitude * .95):
+        print("Height: {}m" .format(vehicle.location.global_relative_frame.alt))
+        sleep(1)
+    print("\nReached target height!")
+
 
     print(vehicle.location.global_relative_frame)
 
@@ -42,6 +52,7 @@ def home():
             connectionString = "127.0.0.1:" + request.form.get('PortNumber')
             print(Fore.GREEN + "Port: "+ connectionString + " selected")
             print(Fore.WHITE)
+            global vehicle
             vehicle = connect(connectionString, wait_ready = True)
             arm_n_takeoff(20 , vehicle)
 
@@ -60,6 +71,7 @@ def home():
 def coordinateInput():
     return render_template("NMEAdecoder.html")
 
+#sends the coordinates to back end
 @app.route('/background_process_test')
 def background_process_test():
     data = request.get_json
@@ -74,6 +86,16 @@ def background_process_test():
     print("Coordinates 4(LAT,LNG): "+ str(UserInputCoordinates[3]))
 
     return ('hi')
+
+#gets telemetry data to update UI
+@app.route('/telemetryInfo')
+def telemetryInfo():
+    data = request.get_json
+    global vehicle
+    Battery = vehicle.battery.level
+    Location = vehicle.location.global_relative_frame
+    sender = {'currentLocation': str(Location) ,'batteryLeft': str(Battery)}
+    return (sender)
 
 if __name__ == "__main__":
     #vehicle = connect('tcp:127.0.0.1:5760', wait_ready=True)

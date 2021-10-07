@@ -124,14 +124,8 @@
     <!-- This script makes page not refresh on submit click-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type=text/javascript>
-            $(function() {
+        $(function() {
               $('a#startMission').bind('click', function() {
-                /*$.getJSON('/background_process_test',
-                  {"a": $('input[name="test"]').val()},
-                  function(data) {
-                  //do nothing
-                });
-            return false;*/
             var coor1Lat = document.getElementById('coor1Lat').value;
             var coor1Lng = document.getElementById('coor1Lng').value;
             var coor2Lat = document.getElementById('coor2Lat').value;
@@ -158,7 +152,6 @@
           });
         });
     </script>
-
     <form id = 'DroneStats'>
       <h1>Drone Information</h1>
       <div class="col">
@@ -171,6 +164,33 @@
         <label id = "BatteryLife">Battery life: </label>
       </div>
     </form>
+    <!-- Telemetry updater-->
+    <script>
+      setInterval(function()
+      { 
+        if( "{{ flash_message }}" == "True")
+          $.ajax({
+            type:"GET",
+            url:"http://127.0.0.1:5000/telemetryInfo",
+            data:{},
+            contentType: "application/json",
+            success:function(data)
+            {
+              console.log(data);
+              var Location = document.getElementById('CurrentLocation');
+              Location.textContent = 'Current Location:' + data.currentLocation.split("LocationGlobalRelative:").pop() ;
+              
+              var Battery = document.getElementById('BatteryLife');
+              Battery.textContent = "Battery Life: " + data.batteryLeft + "%";
+              /*
+
+              var status = document.getElementById('Status');
+              status.textContent = "Status: Not Active";
+                //do something with response data*/
+            }
+          });
+      }, 10000);//time in milliseconds       
+    </script>
 
     <!-- Extra Sections for emergency landing, coming back, etc.-->
     <form id = 'DroneOverride'>
