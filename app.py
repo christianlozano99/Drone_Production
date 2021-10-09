@@ -1,3 +1,4 @@
+import math
 from flask import Flask, redirect, url_for, render_template, request
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 from time import sleep
@@ -162,6 +163,158 @@ def land():
     # End program execution.
     exit()
 
+def get_distance_meters(aLocation1, aLocation2):
+    dlat = aLocation2.lat - aLocation1.lat
+    dlong = aLocation2.lon - aLocation1.lon
+    return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
+
+def search_algorithm(coordinates, altitude):
+
+    # initialize coords lilst
+    coords = [0, 0, 0, 0]
+
+    # coordinates are in (lat,long); coords is a list of the corners of a perfect rectangle that contains the user-inputted search area
+
+    coords[0] = (min(coordinates[0][0], coordinates[3][0]), min(coordinates[0][1], coordinates[1][1]))
+    coords[1] = (max(coordinates[1][0], coordinates[2][0]), min(coordinates[0][1], coordinates[1][1]))
+    coords[2] = (max(coordinates[1][0], coordinates[2][0]), max(coordinates[2][1], coordinates[3][1]))
+    coords[3] = (min(coordinates[0][0], coordinates[3][0]), max(coordinates[2][1], coordinates[3][1]))
+
+
+    longitudes = [coords[0][1], coords[1][1]]
+    latitudes = [coords[0][0], coords[1][0]]
+
+    # interval for search passes: .00003 degrees (approximately 10 ft)
+
+    for i in range(2,10):
+        if i%2 == 0:
+            latitudes.append(latitudes[i-1])
+            longitudes.append(longitudes[i-1] + .00003)
+        else:
+            latitudes.append(latitudes[i-3])
+            longitudes.append(longitudes[i-3] + .00003)
+
+    # write calculated latitudes/longitudes to list of tuples
+
+    waypoints = []
+    for i in range(0, len(longitudes)):
+        waypoints.append((latitudes[i], longitudes[i]))
+
+    return waypoints
+
+def search(coordinates):
+
+    global batteryPercent, personFound, personLocation, numOfRescued, emergencyLand, velocity,\
+            testCoordinates, stopDrone, Retreat
+    
+    # Get mission coordinates.
+    print("BEFORE - coordinates: {}" .format(coordinates))
+    coordinates = search_algorithm(coordinates, altitude = 3.05)
+    print("AFTER - coordinates: {}" .format(coordinates))
+    global vehicle
+    arm_n_takeoff(3.05, vehicle)  # 3.05m == 10ft
+
+    vehicle.airspeed = 20           # Set drone speed in m/s.
+    index = 1                       # Used for printing current waypoint #.
+
+    # Execute until no more coordinates. This loop controls what the drone does if special case arises.
+    for wp in coordinates:
+
+        # Create LocationGlobalRelative variable of current waypoint to then pass to simple_goto()
+        destination = LocationGlobalRelative(wp[0], wp[1], altitude)
+
+        # Get distance between current location and destination. Used to detect arrival to waypoint.
+        distance = get_distance_meters(vehicle.location.global_frame, destination)
+        
+        # Update telemtry
+        telemetry()
+
+        print("\nHeading to waypoint {}: {}\n" .format(index, wp))
+
+        # Tells drone to move to destination.
+        vehicle.simple_goto(destination)
+
+        # Keep moving to destination as long as battery ok and no UI interaction occurs.
+        while distance > 1.2 and not Retreat and not emergencyLand and not stopDrone and batteryPercent > 20:
+            
+            # If drone randomly changes to RTL go back to GUIDED.
+            if vehicle.mode.name == 'RTL':
+                vehicle.mode = VehicleMode("GUIDED")
+                while not vehicle.mode.name == "GUIDED":
+                    print("FIXING RANDOM RTL...")
+                print("FIXED: IN GUIDED AGAIN...")
+                vehicle.simple_goto(destination)
+
+            if personFound:
+                # Store person location
+                personLocation.append( (vehicle.location.global_frame.lat, vehicle.location.global_frame.lon) )
+                
+                print("\nFOUND PERSON AT: ({0:.4f}, {1:.4f})" .format(personLocation[-1][-2], \
+                                                                        personLocation[-1][-1])) # Last appended lat & lon
+                # Lower flag to not trigger again, count person, and sleep for 2 seconds to avoid detecting same person.
+                personFound = False
+                numOfRescued += 1
+                sleep(2)
+
+
+            print("Remaining distance: {0:.2f}m | Speed: {1:.2f}mph" .format(distance, velocity))
+            telemetry()
+            distance = get_distance_meters(vehicle.location.global_frame, destination)
+
+            # Used to slow down the amount output printed.
+            sleep(1)
+
+            '''NOTE: NOT WORKING - Uncomment next two lines to test Retreat.'''
+            #sleep(4)
+            #stopDrone = True
+            '''Uncomment next two lines to test Retreat.'''
+            #sleep(4)
+            #Retreat = True
+            '''Uncomment next two lines to test emergencyLand.'''
+            #sleep(4)
+            #emergencyLand = True
+            '''Uncomment next two lines to test finding people.'''
+            #sleep(3)
+            #personFound = True
+
+        # If user presses Retreat button exit and RTL
+        if Retreat:
+            print("\n-------------------------------------"
+            "\nRETREAAAAT!"
+            "\n-------------------------------------")
+            land()
+
+        # If user presses emergency land button, drone lands.
+        # Vehicle object closed and script exits.
+        if emergencyLand:
+            print("\n-------------------------------------"
+            "\nEMERGENCY LAND!"
+            "\n-------------------------------------")
+            land()
+        
+        # If battery low, RTL.
+        if batteryPercent <= 20:
+            print("\n-------------------------------------"
+            "\nBATTERY LOW! END OF MISSION."
+            "\n-------------------------------------")
+            #emergencyLand = True
+            land()
+            
+
+        # If StopDrone button is pressed drone will loiter until
+        # commanded to continue.
+        if stopDrone:
+            print("\n-------------------------------------"
+            "\nMISSION PAUSED."
+            "\n-------------------------------------\n")
+            #temp = LocationGlobalRelative(position[0], position[1], altitude)
+            #vehicle.simple_goto(temp)
+            #sleep(20)
+            ##loiter() leaving this ourt for now
+            print("Continuing to wp {}:" .format(index))
+            stopDrone = False
+        index += 1
+
 # main page where mostly everything will happen
 @app.route("/", methods = ['POST', 'GET'])
 def home():
@@ -193,19 +346,20 @@ def coordinateInput():
     return render_template("NMEAdecoder.html")
 
 #sends the coordinates to back end
-@app.route('/background_process_test')
-def background_process_test():
+@app.route('/searchStarter')
+def searchStarter():
     data = request.get_json
-    UserInputCoordinates = [(request.args.get('coor1LAT'), request.args.get('coor1LNG')),\
-                            (request.args.get('coor2LAT'), request.args.get('coor2LNG')),\
-                            (request.args.get('coor3LAT'), request.args.get('coor3LNG')),\
-                            (request.args.get('coor4LAT'), request.args.get('coor4LNG'))]
+    UserInputCoordinates = [(float(request.args.get('coor1LAT')), float(request.args.get('coor1LNG'))),\
+                            (float(request.args.get('coor2LAT')), float(request.args.get('coor2LNG'))),\
+                            (float(request.args.get('coor3LAT')), float(request.args.get('coor3LNG'))),\
+                            (float(request.args.get('coor4LAT')), float(request.args.get('coor4LNG')))]
                             
     print("Coordinates 1(LAT,LNG): "+ str(UserInputCoordinates[0]))
     print("Coordinates 2(LAT,LNG): "+ str(UserInputCoordinates[1]))
     print("Coordinates 3(LAT,LNG): "+ str(UserInputCoordinates[2]))
     print("Coordinates 4(LAT,LNG): "+ str(UserInputCoordinates[3]))
-
+    global coordinates
+    search(UserInputCoordinates)
     return ('hi')
 
 #gets telemetry data to update UI
@@ -225,8 +379,8 @@ def telemetryInfo():
                'vGPS': str(gps), 'currVelocity': str(velocity) }
     return (sender)
 
-@app.route('/emergencyLand')
-def emergencyLand():
+@app.route('/emergencyLander')
+def emergencyLander():
     global emergencyLand
     emergencyLand = True
     land()

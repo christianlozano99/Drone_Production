@@ -138,7 +138,7 @@
             
             $.ajax({
                 type: "GET", 
-                url: "http://127.0.0.1:5000/background_process_test", //localhost Flask
+                url: "http://127.0.0.1:5000/searchStarter", //localhost Flask
                 data : {'coor1LAT' : coor1Lat,
                         'coor1LNG' : coor1Lng,
                         'coor2LAT' : coor2Lat,
@@ -236,7 +236,7 @@
             $('a#emergencyLand').bind('click', function() {
           $.ajax({
               type: "GET", 
-              url: "http://127.0.0.1:5000/emergencyLand", //localhost Flask
+              url: "http://127.0.0.1:5000/emergencyLander", //localhost Flask
               data : {},
               contentType: "application/json",
           });
