@@ -1,45 +1,166 @@
 from flask import Flask, redirect, url_for, render_template, request
-from dronekit import connect, VehicleMode
+from dronekit import connect, VehicleMode, LocationGlobalRelative
 from time import sleep
 from colorama import Fore
 
 app = Flask(__name__)
 
 vehicle = None 
-#testing moises test.py with app
+# Telemetry variables used in UI
+batteryPercent = 0.0
+voltage = 0.0
+current = 0.0
+position = tuple()
+height = 0.0
+velocity = 0.0
+gps = None
+
+# These flag variables are for testing the code without Lisa's part.
+# The coordinates are an example. The CV found list will hold the locations
+# of the people found.
+submitConnect = True
+submitCoordinates = True
+Retreat = False
+emergencyLand = False
+stopDrone = False
+personFound = False
+personLocation = []
+numOfRescued = 0
+altitude = 10
+# Used for testing the script w/o search_algorithm(). Do not use if search_algorithm() in use.
+coordinates = [(-35.36386175056098, 149.1647898908397), \
+                (-35.36203233417043, 149.16445339580716), \
+                (-35.361818899557925, 149.16618073697418), \
+                    (-35.36366051678722, 149.16665183001973)]
+
+# Test input for search_algorith(). Not a perfect rectangle
+testCoordinates =  [(-35.36165545753266, 149.1603591066628),    \
+                    (-35.36148046674933, 149.1650368792219),    \
+                    (-35.36391280463349, 149.16083117545315),   \
+                    (-35.364227778280814, 149.16424294534718)]
+
+# Test input is rectangle
+test3 = [(-35.3638805824148, 149.16447914421548), \
+                (-35.363915579561386, 149.16236556358444), \
+                (-35.36174572778457, 149.16224754639185), \
+                    (-35.36171072969738, 149.1643503981872)]
+
+# Test input is half of football field (150' x 160')
+test4_ft_ball_field = [(-35.36231539725387, 149.16226176440182), \
+                        (-35.36275491977364, 149.1622723321772), \
+                            (-35.362758366999635, 149.1617650789596), \
+                                (-35.36231712087627, 149.16174605696395)]
+
+
 def arm_n_takeoff(altitude, vehicleIn):
     vehicle = vehicleIn
-
+    # Wait for drone to be armable
     while not vehicle.is_armable:
         print("Drone is not armable...")
-        sleep(1)
+        telemetry()
+        sleep(1)  
     print("\nDrone is now armable!")
 
+    # Update telemetry.
+    telemetry()
+
+    # Drone must be set to GUIDED mode for cmds to work.
     vehicle.mode = VehicleMode("GUIDED")
 
+    # Wait for the mode to change to GUIDED
     while not vehicle.mode.name == 'GUIDED':
         print("Changing mode to GUIDED...")
+        telemetry()
         sleep(1)
-    print("\nIn GUIDED mode!")
+    print("In GUIDED mode!\n")
 
+    # Update telemetry.
+    telemetry()
+
+    # Arm drone and wait for it to occur.
     vehicle.armed = True
     while vehicle.armed != True:
-        print("Drone is arming...")
+        print("Arming drone...")
+        telemetry()
         sleep(1)
-    print("\nDrone is armed!")
+    print("Drone armed!")
 
-        # Takeoff!
+    # Update telemetry.
+    telemetry()
+
+    # Takeoff!
     vehicle.simple_takeoff(altitude)
-    print("Taking off.")
+    print("Taking off.\n")
 
     # Wait until 95% of altitude is reached
     while vehicle.location.global_relative_frame.alt < (altitude * .95):
         print("Height: {}m" .format(vehicle.location.global_relative_frame.alt))
+        telemetry()
         sleep(1)
-    print("\nReached target height!")
+    print("Reached target height!")
+    return
 
+# This function updates the telemetry data and prints it on the terminal.
+def telemetry():
+    # These variables are declared at the top of the script. Will be used for
+    # the user interface to output telemetry.
+    global batteryPercent, voltage, current, position, height, velocity, gps
+    
+    voltage =           vehicle.battery.voltage
+    current =           vehicle.battery.current
+    batteryPercent =    vehicle.battery.level
+    gps =               vehicle.gps_0
+    position =          (vehicle.location.global_frame.lat, vehicle.location.global_frame.lon)
+    height =            vehicle.location.global_relative_frame.alt
+    velocity =          vehicle.airspeed / 0.44704
+    
+    '''
+    print("\n*************************************")
+    print("{}" .format(vehicle.battery))
+    print("{}" .format(gps))
+    print("Drone position: {}" .format(position))
+    print("Drone altitude: {}m" .format(height))
+    print("Speed: {}mph" .format(velocity))
+    print("*************************************\n")
+    '''
+def land():
+    
+    global vehicle, emergencyLand, numOfRescued
 
-    print(vehicle.location.global_relative_frame)
+    # Update telemetry.
+    telemetry()
+
+    if not emergencyLand:
+        # Return to Launch
+        print("\nReturning to launch.\n")
+        vehicle.mode = VehicleMode("RTL")
+        while not vehicle.mode.name == "RTL":
+            print("Changing to RTL mode...")
+            sleep(1)
+        print("\nDrone Switched to RTL mode!")
+
+    else:
+        # Land drone
+        vehicle.mode = "LAND"
+        while not vehicle.mode.name == "LAND":
+            print("Changing to LAND mode...")
+            sleep(1)
+        print("\nDrone Switched to LAND mode!")
+        print("Landing...")
+
+    print("Closing vehicle object.")
+    #vehicle.close()
+    # need to consider making this a new page on UI
+    i = 0
+    print("\n_______MISSION REPORT:______________________________")
+    print("Number of rescued: {}" .format(numOfRescued))
+    for location in personLocation:
+        print("Person {} at: {}" .format(i, location))
+        i += 1
+    print("_______END OF MISSION______________________________\n")
+
+    # End program execution.
+    exit()
 
 # main page where mostly everything will happen
 @app.route("/", methods = ['POST', 'GET'])
@@ -92,10 +213,30 @@ def background_process_test():
 def telemetryInfo():
     data = request.get_json
     global vehicle
+    voltage = vehicle.battery.voltage
+    current = vehicle.battery.current
     Battery = vehicle.battery.level
+    gps = vehicle.gps_0
+    velocity = vehicle.airspeed / 0.44704
+
+    #thinking about this
     Location = vehicle.location.global_relative_frame
-    sender = {'currentLocation': str(Location) ,'batteryLeft': str(Battery)}
+    sender = {'currentLocation': str(Location) ,'batteryLeft': str(Battery), 'currVoltage':str(voltage), 'currCurrent' : str(current), \
+               'vGPS': str(gps), 'currVelocity': str(velocity) }
     return (sender)
+
+@app.route('/emergencyLand')
+def emergencyLand():
+    global emergencyLand
+    emergencyLand = True
+    land()
+
+@app.route('/RTLLand')
+def RTLLand():
+    global emergencyLand
+    emergencyLand = False
+    land()
+
 
 if __name__ == "__main__":
     #vehicle = connect('tcp:127.0.0.1:5760', wait_ready=True)

@@ -163,6 +163,18 @@
       <div class="col">
         <label id = "BatteryLife">Battery life: </label>
       </div>
+      <div class="col">
+        <label id = "Voltage">Voltage: Loading</label>
+      </div>
+      <div class="col">
+        <label id = "Current">Current: Loading</label>
+      </div>
+      <div class="col">
+        <label id = "GPS">GPS: Loading</label>
+      </div>
+      <div class="col">
+        <label id = "Velocity">Velocity: Loading</label>
+      </div>
     </form>
     <!-- Telemetry updater-->
     <script>
@@ -178,15 +190,23 @@
             {
               console.log(data);
               var Location = document.getElementById('CurrentLocation');
-              Location.textContent = 'Current Location:' + data.currentLocation.split("LocationGlobalRelative:").pop() ;
+              Location.textContent = 'Current Location: ' + data.currentLocation.split("LocationGlobalRelative:").pop() ;
               
               var Battery = document.getElementById('BatteryLife');
               Battery.textContent = "Battery Life: " + data.batteryLeft + "%";
-              /*
+              
+              var Voltage = document.getElementById('Voltage');
+              Voltage.textContent = "Voltage: " + data.currVoltage;
 
-              var status = document.getElementById('Status');
-              status.textContent = "Status: Not Active";
-                //do something with response data*/
+              var Current = document.getElementById('Current');
+              Current.textContent = "Current: " + data.currCurrent;
+              
+              var currGPS = document.getElementById('GPS');
+              currGPS.textContent = "GPS: " + data.vGPS;
+
+              var currVelocity = document.getElementById('Velocity');
+              currVelocity.textContent = "Velocity: " + data.currVelocity;
+
             }
           });
       }, 10000);//time in milliseconds       
@@ -196,11 +216,11 @@
     <form id = 'DroneOverride'>
       <h1>Drone Override</h1>
       <div class="col">
-        <button id = 'Emergency' type = 'button' onclick = "" class="btn btn-primary">Emergency Land</button>
+        <a href=# id=emergencyLand><button id = 'Emergency' type = 'button' onclick = "" class="btn btn-primary">Emergency Land</button></a>
       </div>
       <br>
       <div class="col">
-        <button id = 'Retreat' type = 'button' onclick = "" class="btn btn-primary">Retreat</button>
+        <a href=# id=RTLLand><button id = 'Retreat' type = 'button' onclick = "" class="btn btn-primary">Retreat</button></a>
       </div>
       <br>
 
@@ -210,7 +230,33 @@
         <input class="form-control" id="landLat" aria-describedby="emailHelp" placeholder="Enter latitude">
       </div>
     </form>
+    <!--Emergency land button-->
+    <script type=text/javascript>
+      $(function() {
+            $('a#emergencyLand').bind('click', function() {
+          $.ajax({
+              type: "GET", 
+              url: "http://127.0.0.1:5000/emergencyLand", //localhost Flask
+              data : {},
+              contentType: "application/json",
+          });
+        });
+      });
+  </script>
 
+  <!--Retreat button-->
+  <script type=text/javascript>
+      $(function() {
+            $('a#RTLLand').bind('click', function() {
+          $.ajax({
+              type: "GET", 
+              url: "http://127.0.0.1:5000/RTLLand", //localhost Flask
+              data : {},
+              contentType: "application/json",
+          });
+        });
+      });
+  </script>
     <script>
         // Initialized map UI
         function initMAP()
