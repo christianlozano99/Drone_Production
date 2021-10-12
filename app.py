@@ -425,8 +425,8 @@ def CV_Model():
 
 
     # Only Use for When We Want to Stop with Humans!!!   
-    #    if stop == True:
-    #       break;
+        if stop == True:
+           break
 
         #elif key == 27: #esc key stops the process
         #    break;
@@ -464,9 +464,9 @@ def home():
             print("INVALID!")
             return render_template("index.html", flash_message = False, SelectedPort = SelectedPort)
 
-
         return render_template("index.html", flash_message = True, SelectedPort = SelectedPort, Battery = vehicle.battery.level\
-            , Port = request.form.get("PortNumber"), location = vehicle.location.global_relative_frame)
+            , Port = request.form.get("PortNumber"), location = vehicle.location.global_relative_frame, \
+            lat = float(vehicle.location.global_frame.lat), lng = float(vehicle.location.global_frame.lon))
 
     return render_template("index.html", flash_message = False, SelectedPort = 0)
 

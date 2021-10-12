@@ -94,30 +94,9 @@
 
     <!-- form to input 4 coordinates-->
     <form id = 'coordinateInputList' name = "test2">
-      <h1>Search Area Input</h1>
       <div class="col">
-        <label >Coordinate 1: </label>
-        <input class="form-control" id="coor1Lat" aria-describedby="emailHelp" placeholder="Enter latitude" name = "test">
-        <input class="form-control" id="coor1Lng" aria-describedby="emailHelp" placeholder="Enter longitude">
-      </div>
-      <div class="col">
-        <label >Coordinate 2: </label>
-        <input class="form-control" id="coor2Lat" aria-describedby="emailHelp" placeholder="Enter latitude">
-        <input class="form-control" id="coor2Lng" aria-describedby="emailHelp" placeholder="Enter longitude">
-      </div>
-      <div class="col">
-        <label >Coordinate 3: </label>
-        <input class="form-control" id="coor3Lat" aria-describedby="emailHelp" placeholder="Enter latitude">
-        <input class="form-control" id="coor3Lng" aria-describedby="emailHelp" placeholder="Enter longitude">
-      </div>
-      <div class="col">
-        <label >Coordinate 4: </label>
-        <input class="form-control" id="coor4Lat" aria-describedby="emailHelp" placeholder="Enter latitude">
-        <input class="form-control" id="coor4Lng" aria-describedby="emailHelp" placeholder="Enter longitude">
-      </div>
-      <div class="col">
-        <a href=# id=startMission><button type = 'button' onclick = "initMAP()" class="btn btn-primary">Submit</button></a>
-        <button type = 'clear' class="btn btn-primary">Clear</button>
+        <a href=# id=startMission><button type = 'button' onclick = "" class="btn btn-primary">Submit</button></a>
+        <a href=# id=clear><button type = 'button' class="btn btn-primary">Clear</button></a>
       </div>
     </form>
 
@@ -126,31 +105,50 @@
     <script type=text/javascript>
         $(function() {
               $('a#startMission').bind('click', function() {
-            var coor1Lat = document.getElementById('coor1Lat').value;
-            var coor1Lng = document.getElementById('coor1Lng').value;
-            var coor2Lat = document.getElementById('coor2Lat').value;
-            var coor2Lng = document.getElementById('coor2Lng').value;
-            var coor3Lat = document.getElementById('coor3Lat').value;
-            var coor3Lng = document.getElementById('coor3Lng').value;
-            var coor4Lat = document.getElementById('coor4Lat').value;
-            var coor4Lng = document.getElementById('coor4Lng').value;
 
-            
+            if(test.length < 5)
+            {
+              alert("Not enough points to search a square!");
+              return;
+            }
+
+            else if(test.length > 5)
+            {
+              alert("Too many points");
+              return;
+            }
+
             $.ajax({
                 type: "GET", 
                 url: "http://127.0.0.1:5000/searchStarter", //localhost Flask
-                data : {'coor1LAT' : coor1Lat,
-                        'coor1LNG' : coor1Lng,
-                        'coor2LAT' : coor2Lat,
-                        'coor2LNG' : coor2Lng,
-                        'coor3LAT' : coor3Lat,
-                        'coor3LNG' : coor3Lng,
-                        'coor4LAT' : coor4Lat,
-                        'coor4LNG' : coor4Lng},
+                data : {'coor1LAT' : test[1].getPosition().lat(),
+                        'coor1LNG' : test[1].getPosition().lng(),
+                        'coor2LAT' : test[2].getPosition().lat(),
+                        'coor2LNG' : test[2].getPosition().lng(),
+                        'coor3LAT' : test[3].getPosition().lat(),
+                        'coor3LNG' : test[3].getPosition().lng(),
+                        'coor4LAT' : test[4].getPosition().lat(),
+                        'coor4LNG' : test[4].getPosition().lng()},
                 contentType: "application/json",
             });
           });
         });
+    </script>
+    <script>
+      $(function() {
+        $('a#clear').bind('click', function() {
+
+          locationSave = test[0];
+          for (let i = 1; i < test.length; i++) {
+            test[i].setMap(null);
+          }
+          test = [];
+          test.push(locationSave);
+          
+    });
+  });
+            
+
     </script>
     <form id = 'DroneStats'>
       <h1>Drone Information</h1>
@@ -206,7 +204,6 @@
 
               var currVelocity = document.getElementById('Velocity');
               currVelocity.textContent = "Velocity: " + data.currVelocity;
-
             }
           });
       }, 10000);//time in milliseconds       
@@ -223,12 +220,6 @@
         <a href=# id=RTLLand><button id = 'Retreat' type = 'button' onclick = "" class="btn btn-primary">Retreat</button></a>
       </div>
       <br>
-
-      <div class="col">
-        <button id= 'Land' type = 'button' onclick = "" class="btn btn-primary">Land at Location: </button>
-        <input class="form-control" id="landLng" aria-describedby="emailHelp" placeholder="Enter longitude">
-        <input class="form-control" id="landLat" aria-describedby="emailHelp" placeholder="Enter latitude">
-      </div>
     </form>
     <!--Emergency land button-->
     <script type=text/javascript>
@@ -259,39 +250,8 @@
   </script>
     <script>
         // Initialized map UI
-        function initMAP()
-        {
-
-          var location1 = {lat: parseFloat(document.getElementById('coor1Lat').value), lng: parseFloat(document.getElementById('coor1Lng').value)};
-          var location2 = {lat: parseFloat(document.getElementById('coor2Lat').value), lng: parseFloat(document.getElementById('coor2Lng').value)};
-          var location3 = {lat: parseFloat(document.getElementById('coor3Lat').value), lng: parseFloat(document.getElementById('coor3Lng').value)};
-          var location4 = {lat: parseFloat(document.getElementById('coor4Lat').value), lng: parseFloat(document.getElementById('coor4Lng').value)};
-
-          if(Number.isNaN(location1.lat) || Number.isNaN(location2.lat) ||Number.isNaN(location3.lat) ||Number.isNaN(location4.lat)||
-          Number.isNaN(location1.lng)||Number.isNaN(location2.lng)||Number.isNaN(location3.lng)||Number.isNaN(location4.lng))
-          {
-            var location = {lat: 28.6024, lng: -81.2001};
-            var map = new google.maps.Map(document.getElementById('map'),
-            {zoom: 15,center: location});
-            return;
-          }
-          else
-          {
-            var middleLat = (location1.lat+location2.lat+location3.lat+location4.lat)/4;
-            var middleLng = (location1.lng + location2.lng +location3.lng + location4.lng)/4;
-            var location = {lat: middleLat, lng: middleLng};
-          }
-
-          var map = new google.maps.Map(document.getElementById('map'),
-          {zoom: 15,center: location}); 
-          var marker = new google.maps.Marker({position:location1, map:map});
-          var marer2 = new google.maps.Marker({position:location2, map:map});
-          var marer3 = new google.maps.Marker({position:location3, map:map});
-          var marer4 = new google.maps.Marker({position:location4, map:map});
-
-
-        }
-
+        var test = [];
+        var Map;
         // pulls up drone GUI after selecting port
         function dronePullup()
         {
@@ -311,10 +271,16 @@
         // gets hard codeded numbers for now when connection happens it'll use get for drone stats
         function fetechDroneStats(dronenum)
         {
-          var location = {lat: 28.6024, lng: -81.2001};
-          var map = new google.maps.Map(document.getElementById('map'),
-          {zoom: 15,center: location}); 
-          var marker = new google.maps.Marker({position:location, map:map});
+          var location = {lat: parseFloat('{{lat}}'), lng: parseFloat('{{lng}}')};
+          map = new google.maps.Map(document.getElementById('map'), {zoom: 16,center: location}); 
+          const image = "https://www.pngfind.com/pngs/m/53-533184_png-file-svg-clip-art-drone-png-transparent.png";
+          var marker = new google.maps.Marker({position:location, map:map, animation: google.maps.Animation.DROP, 
+            icon: {
+          size: new google.maps.Size(35, 35),
+          scaledSize: new google.maps.Size(35, 35),
+          url: image 
+          },});
+          test.push(marker);
 
           var ID = document.getElementById('DroneID');
           ID.textContent ='Drone Port: '+ "{{Port}}";
@@ -325,14 +291,21 @@
 
           var Battery = document.getElementById('BatteryLife');
           Battery.textContent = "Battery Life: " + "{{ Battery }}"+ "%";
+        
+          map.addListener("click", (event) => {addMarker(event.latLng);});
 
+        }
+        
+        function addMarker(position) {
+          const marker = new google.maps.Marker({
+            position,
+            map, draggable: false,animation: google.maps.Animation.DROP
+          });
 
-          var status = document.getElementById('Status');
-          status.textContent = "Status: Not Active";
-          
+          test.push(marker);
         }
 
     </script>
-    <script async defer src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAB7MbKvVHLspmx_69G-eTAUtCHwJqJlgY&callback=initMAP"></script>
+    <script async src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAB7MbKvVHLspmx_69G-eTAUtCHwJqJlgY&callback=initMAP"></script>
     
 </html>
