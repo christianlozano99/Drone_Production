@@ -428,8 +428,8 @@ def CV_Model():
     #    if stop == True:
     #       break;
 
-        elif key == 27: #esc key stops the process
-            break;
+        #elif key == 27: #esc key stops the process
+        #    break;
 
     # Save the last frame detected to a JPEG file
     name = "Last_Frame.jpg"
@@ -457,7 +457,7 @@ def home():
             print(Fore.GREEN + "Port: "+ connectionString + " selected")
             print(Fore.WHITE)
             global vehicle
-            vehicle = connect(connectionString, wait_ready = True)
+            vehicle = connect(connectionString, wait_ready = True, timeout = 90)
             arm_n_takeoff(20 , vehicle)
 
         else:
