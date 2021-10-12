@@ -95,6 +95,9 @@
     <!-- form to input 4 coordinates-->
     <form id = 'coordinateInputList' name = "test2">
       <div class="col">
+        <head>Coordinates</head>
+        <ul id = "pickedCoordinates">
+        </ul>
         <a href=# id=startMission><button type = 'button' onclick = "" class="btn btn-primary">Submit</button></a>
         <a href=# id=clear><button type = 'button' class="btn btn-primary">Clear</button></a>
       </div>
@@ -144,6 +147,7 @@
           }
           test = [];
           test.push(locationSave);
+          document.getElementById('pickedCoordinates').innerHTML ='';
           
     });
   });
@@ -303,6 +307,7 @@
           });
 
           test.push(marker);
+          document.getElementById('pickedCoordinates').innerHTML += ('<li>lat:'+marker.getPosition().lat()+', long:' + marker.getPosition().lng() +'</li>');
         }
 
     </script>
