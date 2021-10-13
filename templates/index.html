@@ -13,12 +13,9 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav">
-                <li class="nav-item">
+                <!--<li class="nav-item">
                   <a class="nav-link" href="/">Coordinate Input <span class="sr-only"></span></a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/NMEAdecoder">NMEA decoder</a>
-                </li>
+                </li>!-->
               </ul>
             </div>
           </nav>
@@ -79,7 +76,7 @@
     </style>   
 
 <!-- This form is the intial Drop down to pick the port -->
-    <form method="post" action="/">
+    <form method="post" action="/" id = "portnumberStuff">
       <div class="control-group">
           <label class="control-label">Enter Port Number:</label>
           <div class="controls">
@@ -88,7 +85,6 @@
             <button onclick = 'dronePullup();' type="submit" class="btn btn-primary" name = "action1">Submit</button>
       </div>
     </form>
-
     <!-- Pulls up google maps API-->
     <div id = "map"></div>
 
@@ -208,9 +204,20 @@
 
               var currVelocity = document.getElementById('Velocity');
               currVelocity.textContent = "Velocity: " + data.currVelocity;
-            }
+
+              test[0].setMap(null);
+              var markerLocation = {lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)};
+              const image = "https://www.pngfind.com/pngs/m/53-533184_png-file-svg-clip-art-drone-png-transparent.png";
+              var marker = new google.maps.Marker({position:markerLocation, map:map, 
+                icon: {
+                size: new google.maps.Size(35, 35),
+                scaledSize: new google.maps.Size(35, 35),
+                url: image 
+                },});
+              test[0] = marker;
+              }
           });
-      }, 10000);//time in milliseconds       
+      }, 5000);//time in milliseconds
     </script>
 
     <!-- Extra Sections for emergency landing, coming back, etc.-->
@@ -268,6 +275,8 @@
             document.getElementById('DroneStats').style.display = "inline-block";
             document.getElementById('DroneOverride').style.display = "inline-block";
 
+            
+            document.getElementById('portnumberStuff').style.display = "none";
             fetechDroneStats(dronePicked);
           }
         }

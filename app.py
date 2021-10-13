@@ -470,11 +470,6 @@ def home():
 
     return render_template("index.html", flash_message = False, SelectedPort = 0)
 
-# made a nema decoder probably useless
-@app.route("/NMEAdecoder")
-def coordinateInput():
-    return render_template("NMEAdecoder.html")
-
 #sends the coordinates to back end
 @app.route('/searchStarter')
 def searchStarter():
@@ -505,8 +500,10 @@ def telemetryInfo():
 
     #thinking about this
     Location = vehicle.location.global_relative_frame
+    lon = vehicle.location.global_frame.lon
+    lat = vehicle.location.global_frame.lat
     sender = {'currentLocation': str(Location) ,'batteryLeft': str(Battery), 'currVoltage':str(voltage), 'currCurrent' : str(current), \
-               'vGPS': str(gps), 'currVelocity': str(velocity) }
+               'vGPS': str(gps), 'currVelocity': str(velocity), 'longitude': float(lon), 'latitude':float(lat) }
     return (sender)
 
 @app.route('/emergencyLander')
