@@ -78,11 +78,11 @@
 <!-- This form is the intial Drop down to pick the port -->
     <form method="post" action="/" id = "portnumberStuff">
       <div class="control-group">
-          <label class="control-label">Enter Port Number:</label>
+        <h5>Enter Port Number:</h5>
           <div class="controls">
               <input type="text" name = "PortNumber">
           </div>
-            <button onclick = 'dronePullup();' type="submit" class="btn btn-primary" name = "action1">Submit</button>
+            <button onclick = 'dronePullup();' type="submit" class="btn btn-dark" name = "action1">Connect</button>
       </div>
     </form>
     <!-- Pulls up google maps API-->
@@ -91,11 +91,20 @@
     <!-- form to input 4 coordinates-->
     <form id = 'coordinateInputList' name = "test2">
       <div class="col">
-        <head>Coordinates</head>
-        <ul id = "pickedCoordinates">
-        </ul>
-        <a href=# id=startMission><button type = 'button' onclick = "" class="btn btn-primary">Submit</button></a>
-        <a href=# id=clear><button type = 'button' class="btn btn-primary">Clear</button></a>
+        <h1 class = "display-4">Coordinates</h1>
+        <table class="table">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Latitude</th>
+              <th scope="col">Longitude</th>
+            </tr>
+          </thead>
+          <tbody id = "pickedCoordinates">
+          </tbody>
+        </table>
+        <a href=# id=startMission><button type = 'button' onclick = "" class="btn btn-dark">Submit</button></a>
+        <a href=# id=clear><button type = 'button' class="btn btn-dark">Clear</button></a>
       </div>
     </form>
 
@@ -105,13 +114,13 @@
         $(function() {
               $('a#startMission').bind('click', function() {
 
-            if(test.length < 5)
+            if(inputCoordinates.length < 5)
             {
               alert("Not enough points to search a square!");
               return;
             }
 
-            else if(test.length > 5)
+            else if(inputCoordinates.length > 5)
             {
               alert("Too many points");
               return;
@@ -120,14 +129,14 @@
             $.ajax({
                 type: "GET", 
                 url: "http://127.0.0.1:5000/searchStarter", //localhost Flask
-                data : {'coor1LAT' : test[1].getPosition().lat(),
-                        'coor1LNG' : test[1].getPosition().lng(),
-                        'coor2LAT' : test[2].getPosition().lat(),
-                        'coor2LNG' : test[2].getPosition().lng(),
-                        'coor3LAT' : test[3].getPosition().lat(),
-                        'coor3LNG' : test[3].getPosition().lng(),
-                        'coor4LAT' : test[4].getPosition().lat(),
-                        'coor4LNG' : test[4].getPosition().lng()},
+                data : {'coor1LAT' : inputCoordinates[1].getPosition().lat(),
+                        'coor1LNG' : inputCoordinates[1].getPosition().lng(),
+                        'coor2LAT' : inputCoordinates[2].getPosition().lat(),
+                        'coor2LNG' : inputCoordinates[2].getPosition().lng(),
+                        'coor3LAT' : inputCoordinates[3].getPosition().lat(),
+                        'coor3LNG' : inputCoordinates[3].getPosition().lng(),
+                        'coor4LAT' : inputCoordinates[4].getPosition().lat(),
+                        'coor4LNG' : inputCoordinates[4].getPosition().lng()},
                 contentType: "application/json",
             });
           });
@@ -137,13 +146,14 @@
       $(function() {
         $('a#clear').bind('click', function() {
 
-          locationSave = test[0];
-          for (let i = 1; i < test.length; i++) {
-            test[i].setMap(null);
+          locationSave = inputCoordinates[0];
+          for (let i = 1; i < inputCoordinates.length; i++) {
+            inputCoordinates[i].setMap(null);
           }
-          test = [];
-          test.push(locationSave);
-          document.getElementById('pickedCoordinates').innerHTML ='';
+          inputCoordinates = [];
+          inputCoordinates.push(locationSave);
+          document.getElementById('pickedCoordinates').innerHTML = '';
+          listnumber = 1;
           
     });
   });
@@ -151,28 +161,47 @@
 
     </script>
     <form id = 'DroneStats'>
-      <h1>Drone Information</h1>
-      <div class="col">
-        <label id = 'DroneID'>Drone ID: </label>
-      </div>
-      <div class="col">
-        <label id = "CurrentLocation">Current Location: </label>
-      </div>
-      <div class="col">
-        <label id = "BatteryLife">Battery life: </label>
-      </div>
-      <div class="col">
-        <label id = "Voltage">Voltage: Loading</label>
-      </div>
-      <div class="col">
-        <label id = "Current">Current: Loading</label>
-      </div>
-      <div class="col">
-        <label id = "GPS">GPS: Loading</label>
-      </div>
-      <div class="col">
-        <label id = "Velocity">Velocity: Loading</label>
-      </div>
+      <h1 class = "display-4">Drone Information</h1>
+
+
+      <table class="table">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">Catagory</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:bold" >Drone Port</td>
+            <td id ="dronePort"></td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold" >Current Location</td>
+            <td id ="CurrentLocation"></td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold" >Battery Life</td>
+            <td id ="BatteryLife"></td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold" >Voltage</td>
+            <td id ="Voltage">Loading</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold" >Current</td>
+            <td id ="Current">Loading</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold" >GPS</td>
+            <td id ="GPS">Loading</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold" >Velocity</td>
+            <td id ="Velocity">Loading</td>
+          </tr>
+        </tbody>
+      </table>
     </form>
     <!-- Telemetry updater-->
     <script>
@@ -188,24 +217,24 @@
             {
               console.log(data);
               var Location = document.getElementById('CurrentLocation');
-              Location.textContent = 'Current Location: ' + data.currentLocation.split("LocationGlobalRelative:").pop() ;
+              Location.textContent = data.currentLocation.split("LocationGlobalRelative:").pop() ;
               
               var Battery = document.getElementById('BatteryLife');
-              Battery.textContent = "Battery Life: " + data.batteryLeft + "%";
+              Battery.textContent = data.batteryLeft + "%";
               
               var Voltage = document.getElementById('Voltage');
-              Voltage.textContent = "Voltage: " + data.currVoltage;
+              Voltage.textContent =  data.currVoltage;
 
               var Current = document.getElementById('Current');
-              Current.textContent = "Current: " + data.currCurrent;
+              Current.textContent = data.currCurrent;
               
               var currGPS = document.getElementById('GPS');
-              currGPS.textContent = "GPS: " + data.vGPS;
+              currGPS.textContent = data.vGPS;
 
               var currVelocity = document.getElementById('Velocity');
-              currVelocity.textContent = "Velocity: " + data.currVelocity;
+              currVelocity.textContent = data.currVelocity;
 
-              test[0].setMap(null);
+              inputCoordinates[0].setMap(null);
               var markerLocation = {lat: parseFloat(data.latitude), lng: parseFloat(data.longitude)};
               const image = "https://www.pngfind.com/pngs/m/53-533184_png-file-svg-clip-art-drone-png-transparent.png";
               var marker = new google.maps.Marker({position:markerLocation, map:map, 
@@ -214,7 +243,7 @@
                 scaledSize: new google.maps.Size(35, 35),
                 url: image 
                 },});
-              test[0] = marker;
+                inputCoordinates[0] = marker;
               }
           });
       }, 5000);//time in milliseconds
@@ -222,13 +251,13 @@
 
     <!-- Extra Sections for emergency landing, coming back, etc.-->
     <form id = 'DroneOverride'>
-      <h1>Drone Override</h1>
+      <h1 class = "display-4">Drone Override</h1>
       <div class="col">
-        <a href=# id=emergencyLand><button id = 'Emergency' type = 'button' onclick = "" class="btn btn-primary">Emergency Land</button></a>
+        <a href=# id=emergencyLand><button id = 'Emergency' type = 'button' onclick = "" class="btn btn-dark">Emergency Land</button></a>
       </div>
       <br>
       <div class="col">
-        <a href=# id=RTLLand><button id = 'Retreat' type = 'button' onclick = "" class="btn btn-primary">Retreat</button></a>
+        <a href=# id=RTLLand><button id = 'Retreat' type = 'button' onclick = "" class="btn btn-dark">Retreat</button></a>
       </div>
       <br>
     </form>
@@ -261,8 +290,9 @@
   </script>
     <script>
         // Initialized map UI
-        var test = [];
+        var inputCoordinates = [];
         var Map;
+        var listnumber = 1;
         // pulls up drone GUI after selecting port
         function dronePullup()
         {
@@ -293,17 +323,16 @@
           scaledSize: new google.maps.Size(35, 35),
           url: image 
           },});
-          test.push(marker);
+          inputCoordinates.push(marker);
 
-          var ID = document.getElementById('DroneID');
-          ID.textContent ='Drone Port: '+ "{{Port}}";
-
+          var ID = document.getElementById('dronePort');
+          ID.textContent ="{{Port}}";
         
           var Location = document.getElementById('CurrentLocation');
-          Location.textContent = 'Current Location:' +"{{location}}".split("LocationGlobalRelative:").pop() ;
+          Location.textContent = "{{location}}".split("LocationGlobalRelative:").pop() ;
 
           var Battery = document.getElementById('BatteryLife');
-          Battery.textContent = "Battery Life: " + "{{ Battery }}"+ "%";
+          Battery.textContent = "{{ Battery }}"+ "%";
         
           map.addListener("click", (event) => {addMarker(event.latLng);});
 
@@ -315,8 +344,9 @@
             map, draggable: false,animation: google.maps.Animation.DROP
           });
 
-          test.push(marker);
-          document.getElementById('pickedCoordinates').innerHTML += ('<li>lat:'+marker.getPosition().lat()+', long:' + marker.getPosition().lng() +'</li>');
+          inputCoordinates.push(marker);
+          document.getElementById('pickedCoordinates').innerHTML += ('<tr><th scope="row">' + listnumber + '</th><td>' + marker.getPosition().lat()+ '</td><td>' + marker.getPosition().lng() + '</td></tr>');
+          listnumber += 1;
         }
 
     </script>

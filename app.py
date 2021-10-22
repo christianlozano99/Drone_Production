@@ -11,7 +11,7 @@ import numpy as np
 
 app = Flask(__name__)
 
-vehicle = None 
+vehicle = None
 # Telemetry variables used in UI
 batteryPercent = 0.0
 voltage = 0.0
