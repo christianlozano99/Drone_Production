@@ -425,8 +425,8 @@ def CV_Model():
 
 
     # Only Use for When We Want to Stop with Humans!!!   
-        if stop == True:
-           break
+    #    if stop == True:
+    #       break
 
         #elif key == 27: #esc key stops the process
         #    break;
