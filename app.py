@@ -20,6 +20,8 @@ position = tuple()
 height = 0.0
 velocity = 0.0
 gps = None
+# This flag is set when searching for multiple targets.
+multi_rescue = 0
 
 # These flag variables are for testing the code without Lisa's part.
 # The coordinates are an example. The CV found list will hold the locations
@@ -60,6 +62,8 @@ test4_ft_ball_field = [(-35.36231539725387, 149.16226176440182), \
 
 def arm_n_takeoff(altitude, vehicleIn):
     vehicle = vehicleIn
+    # Used to detect if drone stuck trying to reach set height.
+    count = 1
     # Wait for drone to be armable
     while not vehicle.is_armable:
         print("Drone is not armable...")
@@ -76,6 +80,7 @@ def arm_n_takeoff(altitude, vehicleIn):
     # Wait for the mode to change to GUIDED
     while not vehicle.mode.name == 'GUIDED':
         print("Changing mode to GUIDED...")
+        vehicle.mode = VehicleMode("GUIDED")    # Issue cmd again in case of instruction interruption.
         telemetry()
         sleep(1)
     print("In GUIDED mode!\n")
@@ -101,9 +106,18 @@ def arm_n_takeoff(altitude, vehicleIn):
     # Wait until 95% of altitude is reached
     while vehicle.location.global_relative_frame.alt < (altitude * .95):
         print("Height: {}m" .format(vehicle.location.global_relative_frame.alt))
+
+        # If vehicle stuck trying to reach set height then resent takeoff cmd.
+        if count == 7:
+            print("Resending takeoff cmd.")
+            vehicle.simple_takeoff(altitude)
+            count = 1
+
         telemetry()
+        count += 1
         sleep(1)
     print("Reached target height!")
+
     return
 
 # This function updates the telemetry data and prints it on the terminal.
@@ -142,6 +156,7 @@ def land():
         vehicle.mode = VehicleMode("RTL")
         while not vehicle.mode.name == "RTL":
             print("Changing to RTL mode...")
+            vehicle.mode = VehicleMode("RTL")
             sleep(1)
         print("\nDrone Switched to RTL mode!")
 
@@ -150,6 +165,7 @@ def land():
         vehicle.mode = "LAND"
         while not vehicle.mode.name == "LAND":
             print("Changing to LAND mode...")
+            vehicle.mode = "LAND"
             sleep(1)
         print("\nDrone Switched to LAND mode!")
         print("Landing...")
@@ -173,6 +189,7 @@ def get_distance_meters(aLocation1, aLocation2):
     dlong = aLocation2.lon - aLocation1.lon
     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
 
+#equation of the line between 2 gps coordinates
 def search_algorithm(coordinates, altitude):
 
     # initialize coords lilst
@@ -189,15 +206,19 @@ def search_algorithm(coordinates, altitude):
     longitudes = [coords[0][1], coords[1][1]]
     latitudes = [coords[0][0], coords[1][0]]
 
-    # interval for search passes: .00003 degrees (approximately 10 ft)
+    # interval for search passes: .00006 degrees (approximately 2m)
 
-    for i in range(2,10):
+    i = 1
+
+    while (longitudes[i] < coords[3][1]):
+        i += 1
         if i%2 == 0:
             latitudes.append(latitudes[i-1])
-            longitudes.append(longitudes[i-1] + .00003)
+            longitudes.append(longitudes[i-1] + .00006)
         else:
             latitudes.append(latitudes[i-3])
-            longitudes.append(longitudes[i-3] + .00003)
+            longitudes.append(longitudes[i-3] + .00006)
+        
 
     # write calculated latitudes/longitudes to list of tuples
 
@@ -207,10 +228,11 @@ def search_algorithm(coordinates, altitude):
 
     return waypoints
 
+
 def search(coordinates):
 
     global batteryPercent, personFound, personLocation, numOfRescued, emergencyLand, velocity,\
-            testCoordinates, stopDrone, Retreat
+            testCoordinates, stopDrone, Retreat, multi_rescue
     
     # Get mission coordinates.
     print("BEFORE - coordinates: {}" .format(coordinates))
@@ -229,7 +251,11 @@ def search(coordinates):
         destination = LocationGlobalRelative(wp[0], wp[1], altitude)
 
         # Get distance between current location and destination. Used to detect arrival to waypoint.
-        distance = get_distance_meters(vehicle.location.global_frame, destination)
+        distance = get_distance_meters(vehicle.location.global_relative_frame, destination)
+
+        # These 2 variables are used for comparison to detect if drone is stuck at waypoint.
+        init_distance = distance
+        count = 1
         
         # Update telemtry
         telemetry()
@@ -240,8 +266,16 @@ def search(coordinates):
         vehicle.simple_goto(destination)
 
         # Keep moving to destination as long as battery ok and no UI interaction occurs.
-        while distance > 1.2 and not Retreat and not emergencyLand and not stopDrone and batteryPercent > 20:
-            
+        while distance >= 1.5 and not Retreat and not emergencyLand and not stopDrone and batteryPercent > 20:
+
+            # Detects if drone gets stuck while heading to waypoint by monitoring change in distance. If 10 iterations have passed
+            # and the current distance is 95% or greater of the initial distance; then drone is stuck.
+            # simple_goto cmd might have gotten lost.
+            if count == 15 and distance/init_distance >= .95:
+                print("Getting un-stuck.") 
+                vehicle.simple_goto(destination)    # Resend goto cmd to finish heading to wp.
+                count = 1                           # Reset count variable to detect if stuck again.
+
             # If drone randomly changes to RTL go back to GUIDED.
             if vehicle.mode.name == 'RTL':
                 vehicle.mode = VehicleMode("GUIDED")
@@ -251,23 +285,33 @@ def search(coordinates):
                 vehicle.simple_goto(destination)
 
             if personFound:
-                # Store person location
-                personLocation.append( (vehicle.location.global_frame.lat, vehicle.location.global_frame.lon) )
+                if multi_rescue:    # If rescueing multiple do not RTL at first target find.
+                    # Store person location
+                    personLocation.append( (vehicle.location.global_frame.lat, vehicle.location.global_frame.lon) )
                 
-                print("\nFOUND PERSON AT: ({0:.4f}, {1:.4f})" .format(personLocation[-1][-2], \
+                    print("\nFOUND PERSON AT: ({0:.4f}, {1:.4f})" .format(personLocation[-1][-2], \
                                                                         personLocation[-1][-1])) # Last appended lat & lon
-                # Lower flag to not trigger again, count person, and sleep for 2 seconds to avoid detecting same person.
-                personFound = False
-                numOfRescued += 1
-                sleep(2)
+                    # Lower flag to not trigger again, count person, and sleep for 2 seconds to avoid detecting same person.
+                    personFound = False
+                    numOfRescued += 1
+                    sleep(2)
+                else:   # Finds 1 target and RTL.
+                    print("\nFOUND PERSON AT: ({0:.4f}, {1:.4f})" .format(vehicle.location.global_frame.lat, \
+                                                                        vehicle.location.global_frame.lon)) # Last appended lat & lon
+                    print("Mission Complete!")
+                    land()
 
 
             print("Remaining distance: {0:.2f}m | Speed: {1:.2f}mph" .format(distance, velocity))
             telemetry()
             distance = get_distance_meters(vehicle.location.global_frame, destination)
 
+            # Increment count. At count = 10 the code will detect if the distance has changed or not.
+            count += 1
             # Used to slow down the amount output printed.
-            sleep(1)
+            sleep(.5)
+
+            #vehicle.simple_goto(destination)
 
             '''NOTE: NOT WORKING - Uncomment next two lines to test Retreat.'''
             #sleep(4)
@@ -279,8 +323,9 @@ def search(coordinates):
             #sleep(4)
             #emergencyLand = True
             '''Uncomment next two lines to test finding people.'''
-            #sleep(3)
-            #personFound = True
+            #if index == 4:
+                #sleep(3)
+                #personFound = True
 
         # If user presses Retreat button exit and RTL
         if Retreat:
@@ -305,20 +350,8 @@ def search(coordinates):
             #emergencyLand = True
             land()
             
-
-        # If StopDrone button is pressed drone will loiter until
-        # commanded to continue.
-        if stopDrone:
-            print("\n-------------------------------------"
-            "\nMISSION PAUSED."
-            "\n-------------------------------------\n")
-            #temp = LocationGlobalRelative(position[0], position[1], altitude)
-            #vehicle.simple_goto(temp)
-            #sleep(20)
-            ##loiter() leaving this ourt for now
-            print("Continuing to wp {}:" .format(index))
-            stopDrone = False
         index += 1
+
 
         
  
@@ -458,7 +491,7 @@ def home():
             print(Fore.WHITE)
             global vehicle
             vehicle = connect(connectionString, wait_ready = True, timeout = 90)
-            arm_n_takeoff(20 , vehicle)
+            #arm_n_takeoff(3.05 , vehicle)
 
         else:
             print("INVALID!")
