@@ -96,16 +96,16 @@
         <table class="table">
           <thead class="thead-dark">
             <tr>
-              <th scope="col"></th>
+              <th scope="col">Drone Actions</th>
               <th scope="col"></th>
               <th scope="col"></th>
             </tr>
           </thead>
           <tbody id = "idk">
             <tr>
-              <th scope="row">Drone Action: </th>
+              <th scope="row">Message: </th>
               <td id = "DroneAction">Loading...</td>
-              <td><a href=# id=statusButton><button id = 'missionreport' type = 'button' onclick = "" class="btn btn-dark" disabled>Mission Report</button></a></td>
+              <td><a href=# id=statusButton><button id = 'missionreport' type = 'button' onclick = "" class="btn btn-dark" data-toggle="modal" data-target="#myModal" disabled>Mission Report</button></a></td>
             </tr>
           </tbody>
         </table>
@@ -132,16 +132,16 @@
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLongTitle">Modal title</h5>
+            <h5 class="modal-title" id="exampleModalLongTitle">Mission Report</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
+            X amount of bodies found
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary">Save changes</button>
           </div>
         </div>
       </div>
