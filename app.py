@@ -20,6 +20,8 @@ position = tuple()
 height = 0.0
 velocity = 0.0
 gps = None
+DroneAction = ''
+MissionComplete = False
 # This flag is set when searching for multiple targets.
 multi_rescue = 0
 
@@ -62,14 +64,17 @@ test4_ft_ball_field = [(-35.36231539725387, 149.16226176440182), \
 
 def arm_n_takeoff(altitude, vehicleIn):
     vehicle = vehicleIn
+    global DroneAction
     # Used to detect if drone stuck trying to reach set height.
     count = 1
     # Wait for drone to be armable
     while not vehicle.is_armable:
         print("Drone is not armable...")
+        DroneAction = 'Drone is not armable...'
         telemetry()
         sleep(1)  
     print("\nDrone is now armable!")
+    DroneAction = 'Drone is now armable'
 
     # Update telemetry.
     telemetry()
@@ -80,10 +85,12 @@ def arm_n_takeoff(altitude, vehicleIn):
     # Wait for the mode to change to GUIDED
     while not vehicle.mode.name == 'GUIDED':
         print("Changing mode to GUIDED...")
+        DroneAction = 'Changing mode to GUIDED...'
         vehicle.mode = VehicleMode("GUIDED")    # Issue cmd again in case of instruction interruption.
         telemetry()
         sleep(1)
     print("In GUIDED mode!\n")
+    DroneAction = 'In GUIDED mode!'
 
     # Update telemetry.
     telemetry()
@@ -93,8 +100,11 @@ def arm_n_takeoff(altitude, vehicleIn):
     while vehicle.armed != True:
         print("Arming drone...")
         telemetry()
+        DroneAction = 'Arming drone...'
         sleep(1)
     print("Drone armed!")
+    DroneAction = 'Drone armed!'
+
 
     # Update telemetry.
     telemetry()
@@ -102,6 +112,7 @@ def arm_n_takeoff(altitude, vehicleIn):
     # Takeoff!
     vehicle.simple_takeoff(altitude)
     print("Taking off.\n")
+    DroneAction = 'Taking off.'
 
     # Wait until 95% of altitude is reached
     while vehicle.location.global_relative_frame.alt < (altitude * .95):
@@ -117,6 +128,7 @@ def arm_n_takeoff(altitude, vehicleIn):
         count += 1
         sleep(1)
     print("Reached target height!")
+    DroneAction = 'Reached target height!'
 
     return
 
@@ -145,7 +157,7 @@ def telemetry():
     '''
 def land():
     
-    global vehicle, emergencyLand, numOfRescued
+    global vehicle, emergencyLand, numOfRescued, MissionComplete
 
     # Update telemetry.
     telemetry()
@@ -180,7 +192,7 @@ def land():
         print("Person {} at: {}" .format(i, location))
         i += 1
     print("_______END OF MISSION______________________________\n")
-
+    MissionComplete = True
     # End program execution.
     exit()
 
@@ -489,8 +501,9 @@ def home():
             connectionString = "127.0.0.1:" + request.form.get('PortNumber')
             print(Fore.GREEN + "Port: "+ connectionString + " selected")
             print(Fore.WHITE)
-            global vehicle
+            global vehicle, DroneAction
             vehicle = connect(connectionString, wait_ready = True, timeout = 90)
+            DroneAction = 'Connected'
             #arm_n_takeoff(3.05 , vehicle)
 
         else:
@@ -516,7 +529,8 @@ def searchStarter():
     print("Coordinates 2(LAT,LNG): "+ str(UserInputCoordinates[1]))
     print("Coordinates 3(LAT,LNG): "+ str(UserInputCoordinates[2]))
     print("Coordinates 4(LAT,LNG): "+ str(UserInputCoordinates[3]))
-    global coordinates
+    global coordinates, MissionComplete
+    MissionComplete = False
     search(UserInputCoordinates)
     return ('hi')
 
@@ -524,7 +538,7 @@ def searchStarter():
 @app.route('/telemetryInfo')
 def telemetryInfo():
     data = request.get_json
-    global vehicle
+    global vehicle , DroneAction, MissionComplete
     voltage = vehicle.battery.voltage
     current = vehicle.battery.current
     Battery = vehicle.battery.level
@@ -536,7 +550,7 @@ def telemetryInfo():
     lon = vehicle.location.global_frame.lon
     lat = vehicle.location.global_frame.lat
     sender = {'currentLocation': str(Location) ,'batteryLeft': str(Battery), 'currVoltage':str(voltage), 'currCurrent' : str(current), \
-               'vGPS': str(gps), 'currVelocity': str(velocity), 'longitude': float(lon), 'latitude':float(lat) }
+               'vGPS': str(gps), 'currVelocity': str(velocity), 'longitude': float(lon), 'latitude':float(lat), 'CurrentAction': DroneAction, 'missionComplete': MissionComplete}
     return (sender)
 
 @app.route('/emergencyLander')
@@ -547,8 +561,9 @@ def emergencyLander():
 
 @app.route('/RTLLand')
 def RTLLand():
-    global emergencyLand
+    global emergencyLand, Retreat
     emergencyLand = False
+    Retreat = True
     land()
 
 
