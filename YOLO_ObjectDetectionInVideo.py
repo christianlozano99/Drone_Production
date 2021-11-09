@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
 		if personFound == True:
 			print('FOUND', str(i))
-			#break
+			break
 
 	cap.release()
 	cv2.destroyAllWindows()
