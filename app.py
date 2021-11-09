@@ -61,6 +61,23 @@ test4_ft_ball_field = [(-35.36231539725387, 149.16226176440182), \
                             (-35.362758366999635, 149.1617650789596), \
                                 (-35.36231712087627, 149.16174605696395)]
 
+# Load Tiny YOLOv4 weights & CFG file for CV model
+net = cv2.dnn.readNet("yolov4-tiny.weights","yolov4-tiny.cfg") #Tiny Yolo
+
+# Download the available classes that Tiny YOLOv4 can detect
+classes = []
+with open("coco.names","r") as f:
+    classes = [line.strip() for line in f.readlines()]
+
+# Declare & initialize the layers for the CV model
+layer_names = net.getLayerNames()
+outputlayers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+
+# Download the available colors for the bounding boxes
+colors = np.random.uniform(0,255,size=(len(classes),3))
+
+# Establish the font used in the CV model frame
+font = cv2.FONT_HERSHEY_PLAIN
 
 def arm_n_takeoff(altitude, vehicleIn):
     vehicle = vehicleIn
@@ -254,8 +271,18 @@ def search(coordinates):
     arm_n_takeoff(3.05, vehicle)  # 3.05m == 10ft
 
     vehicle.airspeed = 20           # Set drone speed in m/s.
-    index = 1                       # Used for printing current waypoint #.
-
+    index = 1                       # Used for printing current waypoint #
+    
+    source = 0   # 0 for first available webcam
+    cap = cv2.VideoCapture(source)     # Loading image from the camera
+    
+    if cap is None or not cap.isOpened():     # If unable to open the camera
+      print('Warning: unable to open video source:', source)
+    
+    else:
+      print('Opening video source:', source)
+    
+    
     # Execute until no more coordinates. This loop controls what the drone does if special case arises.
     for wp in coordinates:
 
@@ -296,6 +323,9 @@ def search(coordinates):
                 print("FIXED: IN GUIDED AGAIN...")
                 vehicle.simple_goto(destination)
 
+            # Set the 'personFound' variable to be equal to the value outputted from the CV model
+            personFound = CV_Model(cap, multi_rescue)
+            
             if personFound:
                 if multi_rescue:    # If rescueing multiple do not RTL at first target find.
                     # Store person location
@@ -312,8 +342,12 @@ def search(coordinates):
                                                                         vehicle.location.global_frame.lon)) # Last appended lat & lon
                     print("Mission Complete!")
                     land()
+                    
+                    # Stop the camera
+                    cap.release()
+                    cv2.destroyAllWindows()
 
-
+                    
             print("Remaining distance: {0:.2f}m | Speed: {1:.2f}mph" .format(distance, velocity))
             telemetry()
             distance = get_distance_meters(vehicle.location.global_frame, destination)
@@ -369,124 +403,91 @@ def search(coordinates):
  
 # Code for CV Model (YOLOv4) below
 # YOLOv4 Tiny Weights and CFG Files must be within folder of app.py
-def CV_Model():
-    #Load YOLO
-    #net = cv2.dnn.readNet("yolov4.weights","yolov4.cfg") # Original yolov4
-    net = cv2.dnn.readNet("yolov4-tiny.weights","yolov4-tiny.cfg") #Tiny Yolo
-    classes = []
-    with open("coco.names","r") as f:
-        classes = [line.strip() for line in f.readlines()]
+def CV_Model(cap, multi_rescue):
+	starting_time = time.time()
+	frame_id = 0
 
-    print(classes)
-    layer_names = net.getLayerNames()
-    outputlayers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+	_,frame= cap.read() # Read the frame from the 'cap' tuple
+	frame_id+=1
 
-    colors= np.random.uniform(0,255,size=(len(classes),3))
+	height,width,channels = frame.shape
 
-    #loading image
-    source = 0 #"AnalogTest1.mp4") #0 for 1st webcam
+	# Detecting objects within the frame
+	blob = cv2.dnn.blobFromImage(frame,0.00392,(320,320),(0,0,0),True,crop=False) #reduce 416 to 320    
+	    
+	net.setInput(blob)
+	outs = net.forward(outputlayers)
 
-    cap=cv2.VideoCapture(source) 
+	stop = False
 
-    if cap is None or not cap.isOpened():
-       print('Warning: unable to open video source:', source)
+	#Showing info on screen/ get confidence score of algorithm in detecting an object in blob
+	class_ids = []
+	confidences = []
+	boxes = []
+	for out in outs:
+	    for detection in out:
+	        scores = detection[5:]
+	        class_id = np.argmax(scores)
+	        confidence = scores[class_id]
 
-    else:
-        print('Opening video source:', source)
+	        # Disregard any objects that do not have a confidence greater than 30%
+	        if confidence > 0.3:
+	            # An object has been detected
+	            center_x= int(detection[0]*width)
+	            center_y= int(detection[1]*height)
+	            w = int(detection[2]*width)
+	            h = int(detection[3]*height)
 
+	            #cv2.circle(img,(center_x,center_y),10,(0,255,0),2)
+	            #rectangle co-ordinaters
+	            x=int(center_x - w/2)
+	            y=int(center_y - h/2)
+	            #cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
 
-    font = cv2.FONT_HERSHEY_PLAIN
-    starting_time= time.time()
-    frame_id = 0
+	            boxes.append([x,y,w,h]) #put all rectangle areas
+	            confidences.append(float(confidence)) #how confidence was that object detected and show that percentage
+	            class_ids.append(class_id) #name of the object tha was detected
 
-    while True:
-        _,frame= cap.read() # 
-        frame_id+=1
-        
-        height,width,channels = frame.shape
-        #detecting objects
-        blob = cv2.dnn.blobFromImage(frame,0.00392,(320,320),(0,0,0),True,crop=False) #reduce 416 to 320    
+	            # Print the objects detected with over 30% confidence to the Command Prompt
+	            print(classes[class_id], '\t', round(confidence * 100, 2))
 
-            
-        net.setInput(blob)
-        outs = net.forward(outputlayers)
-        #print(outs[0])
+	            # If humans have been detected with 80% confidence, then set boolean value to True (this can stop detection if we wish)
+	            if classes[class_id] == 'person' and confidence >= 0.8:
+	            	stop = True
 
-        stop = False
+	indexes = cv2.dnn.NMSBoxes(boxes,confidences,0.4,0.6)
 
-        #Showing info on screen/ get confidence score of algorithm in detecting an object in blob
-        class_ids=[]
-        confidences=[]
-        boxes=[]
-        for out in outs:
-            for detection in out:
-                scores = detection[5:]
-                class_id = np.argmax(scores)
-                confidence = scores[class_id]
-                if confidence > 0.3:
-                    #onject detected
-                    center_x= int(detection[0]*width)
-                    center_y= int(detection[1]*height)
-                    w = int(detection[2]*width)
-                    h = int(detection[3]*height)
+	# Place a bounding box around detected objects
+	for i in range(len(boxes)):
+	    if i in indexes:
+	        x,y,w,h = boxes[i]
+	        label = str(classes[class_ids[i]])
+	        confidence= confidences[i]
+	        color = colors[class_ids[i]]
+	        cv2.rectangle(frame,(x,y),(x+w,y+h),color,2)
+	        cv2.putText(frame,label+"  (Confidence: "+str(round(confidence * 100,1)) + "%)",(x,y+30),font,1,(255,255,255),2)	        
 
-                    #cv2.circle(img,(center_x,center_y),10,(0,255,0),2)
-                    #rectangle co-ordinaters
-                    x=int(center_x - w/2)
-                    y=int(center_y - h/2)
-                    #cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
+	elapsed_time = time.time() - starting_time
+	
+	# Calculate & display the Frames per Second (FPS)
+	fps=frame_id/elapsed_time
+	cv2.putText(frame,"FPS:"+str(round(fps,2)),(10,50),font,2,(0,0,0),1)
 
-                    boxes.append([x,y,w,h]) #put all rectangle areas
-                    confidences.append(float(confidence)) #how confidence was that object detected and show that percentage
-                    class_ids.append(class_id) #name of the object tha was detected
+	cv2.imshow("Image",frame)
 
-                    print(classes[class_id], '\t', round(confidence * 100, 2))
+	key = cv2.waitKey(1) #wait 1ms the loop will start again and we will process the next frame
+	
+	# If a human has been found with 80% confidence, save the last frame detected
+	if stop == True:
+		name = "Last_Frame.jpg"
+		cv2.imwrite(name, frame)
 
-                    # If humans have been detected with 80% confidence, then set boolean value to True (this can stop detection if we wish)
-                    if classes[class_id] == 'person' and confidence >= 0.8:
-                        stop = True
+		# Return True - we have found a human with 80% confidence
+		return True
 
-        indexes = cv2.dnn.NMSBoxes(boxes,confidences,0.4,0.6)
+	# Return False - we have NOT found a human with 80% confidence
+	return False
 
-
-        for i in range(len(boxes)):
-            if i in indexes:
-                x,y,w,h = boxes[i]
-                label = str(classes[class_ids[i]])
-                confidence= confidences[i]
-                color = colors[class_ids[i]]
-                cv2.rectangle(frame,(x,y),(x+w,y+h),color,2)
-                cv2.putText(frame,label+"  (Confidence: "+str(round(confidence * 100,1)) + "%)",(x,y+30),font,1,(255,255,255),2)
-                
-
-        elapsed_time = time.time() - starting_time
-        fps=frame_id/elapsed_time
-        cv2.putText(frame,"FPS:"+str(round(fps,2)),(10,50),font,2,(0,0,0),1)
-        
-        cv2.imshow("Image",frame)
-
-        key = cv2.waitKey(1) #wait 1ms the loop will start again and we will process the next frame
-     
-
-
-    # Only Use for When We Want to Stop with Humans!!!   
-    #    if stop == True:
-    #       break
-
-        #elif key == 27: #esc key stops the process
-        #    break;
-
-    # Save the last frame detected to a JPEG file
-    name = "Last_Frame.jpg"
-    cv2.imwrite(name, frame)
-
-
-    cap.release() 
-    cv2.destroyAllWindows()
-
-    return True
-    # Only Use for When We Want to Stop with Humans!!!  
-    #return stop
     
     
     
