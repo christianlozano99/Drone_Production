@@ -174,7 +174,7 @@ def telemetry():
     '''
 def land():
     
-    global vehicle, emergencyLand, numOfRescued, MissionComplete
+    global vehicle, emergencyLand, numOfRescued, MissionComplete, DroneAction
 
     # Update telemetry.
     telemetry()
@@ -182,6 +182,7 @@ def land():
     if not emergencyLand:
         # Return to Launch
         print("\nReturning to launch.\n")
+        DroneAction = "Returning to Launch...."
         vehicle.mode = VehicleMode("RTL")
         while not vehicle.mode.name == "RTL":
             print("Changing to RTL mode...")
@@ -202,13 +203,15 @@ def land():
     print("Closing vehicle object.")
     #vehicle.close()
     # need to consider making this a new page on UI
-    i = 0
-    print("\n_______MISSION REPORT:______________________________")
-    print("Number of rescued: {}" .format(numOfRescued))
-    for location in personLocation:
-        print("Person {} at: {}" .format(i, location))
-        i += 1
-    print("_______END OF MISSION______________________________\n")
+    if multi_rescue:
+        i = 0
+        print("\n_______MISSION REPORT:______________________________")
+        print("Number of rescued: {}" .format(numOfRescued))
+        for location in personLocation:
+            print("Person {} at: {}" .format(i, location))
+            i += 1
+        print("_______END OF MISSION______________________________\n")
+
     MissionComplete = True
     # End program execution.
     exit()
@@ -267,7 +270,7 @@ def search(coordinates):
     print("BEFORE - coordinates: {}" .format(coordinates))
     coordinates = search_algorithm(coordinates, altitude = 3.05)
     print("AFTER - coordinates: {}" .format(coordinates))
-    global vehicle
+    global vehicle, DroneAction
     arm_n_takeoff(3.05, vehicle)  # 3.05m == 10ft
 
     vehicle.airspeed = 20           # Set drone speed in m/s.
@@ -300,6 +303,7 @@ def search(coordinates):
         telemetry()
 
         print("\nHeading to waypoint {}: {}\n" .format(index, wp))
+        DroneAction = "\nHeading to waypoint {}: {}\n" .format(index, wp)
 
         # Tells drone to move to destination.
         vehicle.simple_goto(destination)
@@ -314,6 +318,9 @@ def search(coordinates):
                 print("Getting un-stuck.") 
                 vehicle.simple_goto(destination)    # Resend goto cmd to finish heading to wp.
                 count = 1                           # Reset count variable to detect if stuck again.
+                init_distance = distance            # Update the ini_distance var so that it does not contain starting distance
+            else:
+                init_distance = distance            # Update the ini_distance var so that it does not contain starting distance
 
             # If drone randomly changes to RTL go back to GUIDED.
             if vehicle.mode.name == 'RTL':
@@ -349,6 +356,9 @@ def search(coordinates):
 
                     
             print("Remaining distance: {0:.2f}m | Speed: {1:.2f}mph" .format(distance, velocity))
+            #DroneAction = "\nHeading to waypoint {}: {}\n" .format(index, wp)
+            DroneAction = "Waypoint:" + str(index) + " | Remaining distance: {0:.2f}m".format(distance)
+
             telemetry()
             distance = get_distance_meters(vehicle.location.global_frame, destination)
 
@@ -378,7 +388,9 @@ def search(coordinates):
             print("\n-------------------------------------"
             "\nRETREAAAAT!"
             "\n-------------------------------------")
+            DroneAction = "Retreating..."
             land()
+            Retreat = False
 
         # If user presses emergency land button, drone lands.
         # Vehicle object closed and script exits.
@@ -386,19 +398,23 @@ def search(coordinates):
             print("\n-------------------------------------"
             "\nEMERGENCY LAND!"
             "\n-------------------------------------")
+            DroneAction = "Emergency Landing..."
             land()
+            emergencyLand = False
         
         # If battery low, RTL.
         if batteryPercent <= 20:
             print("\n-------------------------------------"
             "\nBATTERY LOW! END OF MISSION."
             "\n-------------------------------------")
+            DroneAction = "Battery Low... Ending Mission"
+            sleep(.5)
             #emergencyLand = True
             land()
             
         index += 1
 
-
+    land()
         
  
 # Code for CV Model (YOLOv4) below
@@ -540,6 +556,10 @@ def searchStarter():
 def telemetryInfo():
     data = request.get_json
     global vehicle , DroneAction, MissionComplete
+
+    if(vehicle.armed != True):
+        DroneAction = "Drone disarmed"
+
     voltage = vehicle.battery.voltage
     current = vehicle.battery.current
     Battery = vehicle.battery.level
@@ -558,14 +578,16 @@ def telemetryInfo():
 def emergencyLander():
     global emergencyLand
     emergencyLand = True
-    land()
+    #land()
+    return 'hi'
 
 @app.route('/RTLLand')
 def RTLLand():
     global emergencyLand, Retreat
     emergencyLand = False
     Retreat = True
-    land()
+    #land()
+    return 'hi'
 
 
 if __name__ == "__main__":
