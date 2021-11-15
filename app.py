@@ -21,7 +21,9 @@ height = 0.0
 velocity = 0.0
 gps = None
 DroneAction = ''
+bodyLocation = ''
 MissionComplete = False
+name = ''
 # This flag is set when searching for multiple targets.
 multi_rescue = 0
 
@@ -270,13 +272,13 @@ def search(coordinates):
     print("BEFORE - coordinates: {}" .format(coordinates))
     coordinates = search_algorithm(coordinates, altitude = 3.05)
     print("AFTER - coordinates: {}" .format(coordinates))
-    global vehicle, DroneAction
+    global vehicle, DroneAction, bodyLocation
     arm_n_takeoff(3.05, vehicle)  # 3.05m == 10ft
 
     vehicle.airspeed = 20           # Set drone speed in m/s.
     index = 1                       # Used for printing current waypoint #
     
-    source = 0   # 0 for first available webcam
+    source = 1   # 0 for first available webcam
     cap = cv2.VideoCapture(source)     # Loading image from the camera
     
     if cap is None or not cap.isOpened():     # If unable to open the camera
@@ -340,6 +342,8 @@ def search(coordinates):
                 
                     print("\nFOUND PERSON AT: ({0:.4f}, {1:.4f})" .format(personLocation[-1][-2], \
                                                                         personLocation[-1][-1])) # Last appended lat & lon
+                    bodyLocation = "\nFound person at: ({0:.4f}, {1:.4f})" .format(personLocation[-1][-2], personLocation[-1][-1])
+
                     # Lower flag to not trigger again, count person, and sleep for 2 seconds to avoid detecting same person.
                     personFound = False
                     numOfRescued += 1
@@ -348,6 +352,8 @@ def search(coordinates):
                     print("\nFOUND PERSON AT: ({0:.4f}, {1:.4f})" .format(vehicle.location.global_frame.lat, \
                                                                         vehicle.location.global_frame.lon)) # Last appended lat & lon
                     print("Mission Complete!")
+                    bodyLocation = "\nFOUND PERSON AT: ({0:.4f}, {1:.4f})" .format(vehicle.location.global_frame.lat, vehicle.location.global_frame.lon)
+
                     land()
                     
                     # Stop the camera
@@ -495,7 +501,7 @@ def CV_Model(cap, multi_rescue):
 	
 	# If a human has been found with 80% confidence, save the last frame detected
 	if stop == True:
-		name = "Last_Frame.jpg"
+		name = "static/Last_Frame.jpg"
 		cv2.imwrite(name, frame)
 
 		# Return True - we have found a human with 80% confidence
@@ -555,7 +561,7 @@ def searchStarter():
 @app.route('/telemetryInfo')
 def telemetryInfo():
     data = request.get_json
-    global vehicle , DroneAction, MissionComplete
+    global vehicle , DroneAction, MissionComplete, bodyLocation
 
     if(vehicle.armed != True):
         DroneAction = "Drone disarmed"
@@ -571,7 +577,8 @@ def telemetryInfo():
     lon = vehicle.location.global_frame.lon
     lat = vehicle.location.global_frame.lat
     sender = {'currentLocation': str(Location) ,'batteryLeft': str(Battery), 'currVoltage':str(voltage), 'currCurrent' : str(current), \
-               'vGPS': str(gps), 'currVelocity': str(velocity), 'longitude': float(lon), 'latitude':float(lat), 'CurrentAction': DroneAction, 'missionComplete': MissionComplete}
+               'vGPS': str(gps), 'currVelocity': str(velocity), 'longitude': float(lon), 'latitude':float(lat), 'CurrentAction': DroneAction,\
+                'missionComplete': MissionComplete, 'bodyCoordinates': bodyLocation}
     return (sender)
 
 @app.route('/emergencyLander')

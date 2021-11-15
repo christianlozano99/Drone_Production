@@ -137,7 +137,7 @@
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" id = "ReportDiv">
             X amount of bodies found
           </div>
           <div class="modal-footer">
@@ -277,10 +277,19 @@
               var currAction = document.getElementById('DroneAction');
               currAction.textContent = data.CurrentAction;
 
+
               if(data.missionComplete)
               {
                 var ReportButton = document.getElementById('missionreport');
                 ReportButton.disabled = false;
+                var personCoordinates = document.getElementById('ReportDiv');
+                personCoordinates.textContent = data.bodyCoordinates;
+                var img = document.createElement("img");
+                img.src = "/static/Last_Frame.jpg";
+
+                var div = document.getElementById("ReportDiv");
+                div.appendChild(img);
+
               }
 
 

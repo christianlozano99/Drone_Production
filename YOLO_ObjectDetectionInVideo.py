@@ -123,7 +123,7 @@ if __name__ == '__main__':
 	personFound = False
 
 	#loading image
-	source = 0 #"AnalogTest1.mp4") #0 for 1st webcam
+	source = 1 #"AnalogTest1.mp4") #0 for 1st webcam
 
 	cap=cv2.VideoCapture(source) 
 
