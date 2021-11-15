@@ -267,13 +267,13 @@ def search(coordinates):
 
     global batteryPercent, personFound, personLocation, numOfRescued, emergencyLand, velocity,\
             testCoordinates, stopDrone, Retreat, multi_rescue
-    
+    altitude = 4.6
     # Get mission coordinates.
     print("BEFORE - coordinates: {}" .format(coordinates))
-    coordinates = search_algorithm(coordinates, altitude = 3.05)
+    coordinates = search_algorithm(coordinates, altitude)
     print("AFTER - coordinates: {}" .format(coordinates))
     global vehicle, DroneAction, bodyLocation
-    arm_n_takeoff(3.05, vehicle)  # 3.05m == 10ft
+    arm_n_takeoff(altitude, vehicle)  # 3.05m == 10ft
 
     vehicle.airspeed = 20           # Set drone speed in m/s.
     index = 1                       # Used for printing current waypoint #
