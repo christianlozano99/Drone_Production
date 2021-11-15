@@ -561,7 +561,7 @@ def searchStarter():
 @app.route('/telemetryInfo')
 def telemetryInfo():
     data = request.get_json
-    global vehicle , DroneAction, MissionComplete, bodyLocation
+    global vehicle , DroneAction, MissionComplete, bodyLocation, personFound
 
     if(vehicle.armed != True):
         DroneAction = "Drone disarmed"
@@ -578,7 +578,7 @@ def telemetryInfo():
     lat = vehicle.location.global_frame.lat
     sender = {'currentLocation': str(Location) ,'batteryLeft': str(Battery), 'currVoltage':str(voltage), 'currCurrent' : str(current), \
                'vGPS': str(gps), 'currVelocity': str(velocity), 'longitude': float(lon), 'latitude':float(lat), 'CurrentAction': DroneAction,\
-                'missionComplete': MissionComplete, 'bodyCoordinates': bodyLocation}
+                'missionComplete': MissionComplete, 'bodyCoordinates': bodyLocation, 'HumanFound': personFound}
     return (sender)
 
 @app.route('/emergencyLander')

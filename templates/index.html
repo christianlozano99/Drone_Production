@@ -245,6 +245,7 @@
     </form>
     <!-- Telemetry updater-->
     <script>
+    var counter = 0;
       setInterval(function()
       { 
         if( "{{ flash_message }}" == "True")
@@ -277,6 +278,11 @@
               var currAction = document.getElementById('DroneAction');
               currAction.textContent = data.CurrentAction;
 
+              if(data.HumanFound && counter != 1)
+              {
+                counter = 1;
+                alert("Person found, click Mission Report for details");
+              }
 
               if(data.missionComplete)
               {
@@ -285,7 +291,7 @@
                 var personCoordinates = document.getElementById('ReportDiv');
                 personCoordinates.textContent = data.bodyCoordinates;
                 var img = document.createElement("img");
-                img.src = "/static/Last_Frame.jpg";
+                img.src = "/static/Last_Frame.jpg?random";
 
                 var div = document.getElementById("ReportDiv");
                 div.appendChild(img);
