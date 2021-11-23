@@ -73,7 +73,7 @@ with open("coco.names","r") as f:
 
 # Declare & initialize the layers for the CV model
 layer_names = net.getLayerNames()
-outputlayers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+outputlayers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 
 # Download the available colors for the bounding boxes
 colors = np.random.uniform(0,255,size=(len(classes),3))
@@ -267,7 +267,7 @@ def search(coordinates):
 
     global batteryPercent, personFound, personLocation, numOfRescued, emergencyLand, velocity,\
             testCoordinates, stopDrone, Retreat, multi_rescue
-    altitude = 4.6
+    altitude = 5
     # Get mission coordinates.
     print("BEFORE - coordinates: {}" .format(coordinates))
     coordinates = search_algorithm(coordinates, altitude)
@@ -278,7 +278,7 @@ def search(coordinates):
     vehicle.airspeed = 20           # Set drone speed in m/s.
     index = 1                       # Used for printing current waypoint #
     
-    source = 1   # 0 for first available webcam
+    source = 0   # 0 for first available webcam
     cap = cv2.VideoCapture(source)     # Loading image from the camera
     
     if cap is None or not cap.isOpened():     # If unable to open the camera
